@@ -7,14 +7,15 @@
 (in-package #:org.tymoonnext.clss)
 
 ;;; Selector grammar
-;; SELECTOR   ::= MATCHER (OPERATOR MATCHER)*
-;; OPERATOR   ::= #\> | #\Space
-;; MATCHER    ::= (#\* | ID | TAG) CLASS* ATTRIBUTE* SELECTOR*
-;; ID         ::= #\# NAME
-;; TAG        ::= NAME
-;; CLASS      ::= #\. NAME
-;; ATTRIBUTE  ::= #\[ NAME ATTR-VALUE? #\]
-;; ATTR-VALUE ::= #\= (NAME | STRING)
-;; SELECTOR   ::= #\: NAME SEL-ARGS?
-;; SEL-ARGS   ::= #\( VALUE (#\, VALUE)* #\)
+;; SELECTOR      ::= MATCHER (OPERATOR MATCHER)*
+;; OPERATOR      ::= #\> | #\+ | #\~ | #\Space
+;; MATCHER       ::= (#\* | ID | TAG | CLASS | ATTRIBUTE) CLASS* ATTRIBUTE* PSEUDO*
+;; ID            ::= #\# NAME
+;; TAG           ::= NAME
+;; CLASS         ::= #\. NAME
+;; ATTRIBUTE     ::= #\[ NAME ATTR-VALUE? #\]
+;; ATTR-VALUE    ::= ATTR-OPERATOR (NAME | STRING)
+;; ATTR-OPERATOR ::= (#\~ | #\^ | #\$ | #\* | #\|)? #\=
+;; PSEUDO        ::= #\: NAME ARGUMENTS?
+;; ARGUMENTS     ::= #\( VALUE (#\, VALUE)* #\)
 
