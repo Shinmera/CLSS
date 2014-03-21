@@ -6,18 +6,29 @@
 
 (in-package #:org.tymoonnext.clss)
 
-(defclass selector ()
+(defclass compilable () ())
+
+(defclass selector (compilable)
   ((%operations :initarg :operations :initform (make-array 1 :adjustable T :fill-pointer 0) :accessor operations))
   (:documentation ""))
 
-(defclass matcher ()
+(defclass matcher (compilable)
   ((%constraints :initarg :constraints :initform (make-array 1 :adjustable T :fill-pointer 0) :accessor constraints))
+  (:documentation ""))
+
+(defclass constraint (compilable)
+  ()
   (:documentation ""))
 
 (defmethod print-object ((selector selector) stream)
   (print-unreadable-object (selector stream :type T)
-    (loop for op across (operations selector)
-          do (format stream "~a " op)))
+    (write-char #\{ stream)
+    (loop with length = (length (operations selector))
+          for i from 0 below length
+          do (princ (aref (operations selector) i) stream)
+             (unless (= i (1- length))
+               (write-char #\Space stream)))
+    (write-char #\} stream))
   selector)
 
 (defmethod print-object ((matcher matcher) stream)
@@ -40,39 +51,45 @@
   (:method ((selector selector) operator)
     (vector-push-extend operator (operations selector))))
 
-(defclass any-constraint () ())
+(defclass any-constraint (constraint) ())
 
 (defmethod print-object ((con any-constraint) stream)
-  (write-char #\* stream))
+  (write-char #\* stream)
+  con)
 
-(defclass named-constraint ()
+(defclass named-constraint (constraint)
   ((%name :initarg :name :initform (error "Name required.") :accessor name)))
 
 (defmethod print-object ((con named-constraint) stream)
-  (princ (name con) stream))
+  (princ (name con) stream)
+  con)
 
 (defclass tag-constraint (named-constraint) ())
 
 (defclass class-constraint (named-constraint) ())
 
 (defmethod print-object ((class class-constraint) stream)
-  (format stream ".~a" (name class)))
+  (format stream ".~a" (name class))
+  class)
 
 (defclass id-constraint (named-constraint) ())
 
 (defmethod print-object ((id id-constraint) stream)
-  (format stream "#~a" (name id)))
+  (format stream "#~a" (name id))
+  id)
 
 (defclass attribute-constraint (named-constraint)
   ((%value :initarg :value :initform NIL :accessor value)
    (%operator :initarg :operator :initform #\= :accessor operator)))
 
 (defmethod print-object ((attribute attribute-constraint) stream)
-  (format stream "[~a~@[~a\"~a\"~]]" (name attribute) (operator attribute) (value attribute)))
+  (format stream "[~a~@[~a\"~a\"~]]" (name attribute) (operator attribute) (value attribute))
+  attribute)
 
 (defclass pseudo-constraint (named-constraint)
   ((%args :initarg :args :initform () :accessor args))
   (:documentation ""))
 
-(defmethod print-object ((pseudo-constraint pseudo-constraint) stream)
-  (format stream ":~a(~{~a~^, ~})" (name pseudo-constraint) (args pseudo-constraint)))
+(defmethod print-object ((constraint pseudo-constraint) stream)
+  (format stream ":~a(~{~a~^, ~})" (name constraint) (args constraint))
+  constraint)
