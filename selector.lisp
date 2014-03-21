@@ -55,11 +55,20 @@
 
 (defclass class-constraint (named-constraint) ())
 
+(defmethod print-object ((class class-constraint) stream)
+  (format stream ".~a" (name class)))
+
 (defclass id-constraint (named-constraint) ())
+
+(defmethod print-object ((id id-constraint) stream)
+  (format stream "#~a" (name id)))
 
 (defclass attribute-constraint (named-constraint)
   ((%value :initarg :value :initform NIL :accessor value)
    (%operator :initarg :operator :initform #\= :accessor operator)))
+
+(defmethod print-object ((attribute attribute-constraint) stream)
+  (format stream "[~a~@[~a\"~a\"~]]" (name attribute) (operator attribute) (value attribute)))
 
 (defclass pseudo-constraint (named-constraint)
   ((%args :initarg :args :initform () :accessor args))
