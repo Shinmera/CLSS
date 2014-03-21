@@ -18,5 +18,6 @@
   :serial T
   :components ((:file "package")
                (:file "selector")
-               (:file "parser"))
+               (:file "parser")
+               (:file "compiler"))
   :depends-on (:plump))
