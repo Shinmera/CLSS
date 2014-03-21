@@ -39,9 +39,9 @@
   (make-instance 'class-constraint :name (read-name)))
 
 (defun read-attribute-operator ()
-  (case (consume)
-    (#\= #\=)
-    (T (consume))))
+  (let ((char (consume)))
+    (unless (char= char #\=) (consume))
+    char))
 
 (defun read-attribute-value ()
   (case (peek)
@@ -97,10 +97,14 @@
           do (add-constraint matcher constraint)
         finally (return matcher)))
 
+(defun read-operator ()
+  (let ((op (string-trim " " (consume-until (make-matcher (not operator))))))
+    (when (peek) (if (string= op "") " " op))))
+
 (defun read-selector ()
   (loop with selector = (make-instance 'selector)
         for matcher = (read-matcher)
-        for operator = (consume)
+        for operator = (read-operator)
         do (add-matcher selector matcher)
            (when operator
              (add-operator selector operator))
