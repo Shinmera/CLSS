@@ -32,3 +32,9 @@
 
 (defmethod generate ((pseudo pseudo-constraint))
   )
+
+(defun compile-selector (string)
+  (generate (parse-selector string)))
+
+(defun select (string node)
+  (funcall (generate (parse-selector string)) node))
