@@ -40,8 +40,9 @@
 
 (defun read-attribute-operator ()
   (let ((char (consume)))
-    (unless (char= char #\=) (consume))
-    char))
+    (if (char= char #\=)
+        "="
+        (progn (consume) (format NIL "~a=" char)))))
 
 (defun read-attribute-value ()
   (case (peek)
