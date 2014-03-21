@@ -17,5 +17,6 @@
   :description "A DOM tree searching engine based on CSS selectors."
   :serial T
   :components ((:file "package")
+               (:file "selector")
                (:file "parser"))
-  :depends-on ())
+  :depends-on (:plump))

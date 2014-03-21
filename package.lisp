@@ -7,5 +7,6 @@
 (in-package #:cl)
 (defpackage #:CLSS
   (:nicknames #:org.tymoonnext.clss)
-  (:use #:cl)
+  (:use #:cl #:plump)
+  (:shadow #:read-name #:read-attribute #:read-attribute-value)
   (:export))
