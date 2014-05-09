@@ -6,7 +6,6 @@
 
 (in-package #:org.tymoonnext.clss)
 
-
 (define-pseudo-selector root (node)
   (root-p node))
 
