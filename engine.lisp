@@ -6,6 +6,8 @@
 
 (in-package #:org.tymoonnext.clss)
 
+(defvar *pseudo-selectors* (make-hash-table :test 'equalp))
+
 (defun match-constraint (constraint item)
   (ecase (car constraint)
     (:c-any
@@ -31,38 +33,59 @@
                        (string= value attr :start2 (- (length attr) (length value)))))
              (#\* (search value attr))
              (#\| (cl-ppcre:scan (format NIL "(^|-)~a(-|$)" value) attr)))))))
-    (:c-pseudo)))
+    (:c-pseudo
+     (destructuring-bind (name args) (cdr constraint)
+       (let ((pseudo (gethash name *pseudo-selectors*)))
+         (assert (not (null pseudo)))
+         (apply pseudo item args))))))
 
 (defun match-matcher (matcher item)
   (assert (eq (pop matcher) :matcher))
-  (loop for constraint = (pop matcher)
+  (loop for constraint in matcher
         always (match-constraint constraint item)))
 
 (defun match-pair (comb matcher set)
-  (let ((list ()))
+  (let ((resultset (make-array (length set) :adjustable T :fill-pointer 0)))
     (labels ((match-items (items)
-               (loop for child in items
-                     when (match-matcher matcher child)
-                       do (push child list)))
+               (loop for item across items
+                     when (and (element-p item)
+                               (match-matcher matcher item))
+                       do (vector-push-extend item resultset)))
              (match-recursive (items)
-               (match-items items)
-               (dolist (item items)
-                 (match-recursive (children item)))))
+               (loop for item across items
+                     when (and (element-p item)
+                               (match-matcher matcher item))
+                       do (vector-push-extend item resultset)
+                     when (nesting-node-p item)
+                       do (match-recursive (children item)))))
       (case (aref comb 0)
         (#\Space
          (match-recursive set))
         (#\>
-         (dolist (item set)
-           (match-items (children item))))
+         (loop for item across set
+               do (match-items (children item))))
         (#\+)
         (#\~)))
-    list))
+    resultset))
 
 (defun match-selector (selector root-node)
   (assert (eq (pop selector) :selector))
-  (loop with set = (list root-node)
+  (loop with set = (etypecase root-node
+                     (node (make-array 1 :initial-element root-node))
+                     (vector root-node)
+                     (list (coerce root-node 'vector)))
         for combinator = (pop selector)
         for matcher = (pop selector)
         while matcher
         do (setf set (match-pair combinator matcher set))
         finally (return set)))
+
+(defun select (selector root-node)
+  (match-selector (etypecase selector
+                    (list selector)
+                    (string (parse-selector selector))) root-node))
+
+(defmacro define-pseudo-selector (name (nodename &rest args-lambda) &body body)
+  `(setf (gethash ,(string name) *pseudo-selectors*)
+         #'(lambda (,nodename ,@args-lambda)
+             ,@body)))
