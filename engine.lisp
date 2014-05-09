@@ -122,6 +122,6 @@
 
 (define-compiler-macro select (selector root-node)
   (typecase selector
-    (list `(%select ,selector ,root-node))
-    (string `(%select ,(parse-selector selector) ,root-node))
+    (list `(%select ',selector ,root-node))
+    (string `(%select ',(parse-selector selector) ,root-node))
     (T `(%select ,selector ,root-node))))
