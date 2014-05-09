@@ -112,7 +112,16 @@
         do (setf set (match-pair combinator matcher set))
         finally (return set)))
 
-(defun select (selector root-node)
+(defun %select (selector root-node)
   (match-selector (etypecase selector
                     (list selector)
                     (string (parse-selector selector))) root-node))
+
+(defun select (selector root-node)
+  (%select selector root-node))
+
+(define-compiler-macro select (selector root-node)
+  (typecase selector
+    (list `(%select ,selector ,root-node))
+    (string `(%select ,(parse-selector selector) ,root-node))
+    (T `(%select ,selector ,root-node))))
