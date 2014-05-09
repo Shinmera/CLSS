@@ -1,0 +1,332 @@
+<!DOCTYPE html><!--
+  This file is a part of CLSS
+  (c) 2014 TymoonNET/NexT http://tymoon.eu (shinmera@tymoon.eu)
+  Author: Nicolas Hafner <shinmera@tymoon.eu>
+  !--><html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8"/>
+    <title>CLSS - About</title>
+    <style type="text/css">
+      code{font-family: Consolas, Inconsolata, monospace;}
+      code.line{margin-left: 20px;}
+      code.output{color: #882222;}
+      code.output:before{content:"=&gt; ";}
+      code a{text-decoration: none; color: blue;}
+      h3{display: inline-block;margin:0;padding:0;}
+      .docs{list-style: none;}
+      .docs li{margin-bottom: 20px;}
+      .docs pre{margin: 0 0 0 10px; white-space: pre-wrap;}
+    </style>
+  </head>
+  <body>
+    <header>
+      <img src="clss-logo.png" alt="CLSS"/><br/>
+      <h1>v0.1.2</h1>
+    </header>
+    <div id="content">
+      <article>
+        <header><h2>What is CLSS?</h2></header>
+        <p>CLSS is a DOM traversal/search engine using CSS selectors. It uses the <a href="https://shinmera.github.io/plump/">Plump</a> DOM.</p>
+      </article>
+      <article>
+        <header><h2>How To</h2></header>
+        <p>Load CLSS through Quicklisp or ASDF:</p>
+        <code class="line">(ql:quickload :clss)</code>
+        <p>Retrieve nodes using a selector:</p>
+        <code class="line">(clss:select "img" (plump:parse "&lt;div&gt;&lt;img src=\"bla.png\" /&gt;&lt;img/&gt;&lt;/div&gt;"))</code>
+        <p>CLSS implements <a href="http://www.w3.org/TR/css3-selectors/">Level 3 Selectors</a> and offers most of the features from the spec. Some things were left out as they make no sense outside a CSS context.</p>
+      </article>
+      <article>
+        <header><h2>Extending CLSS</h2></header>
+        <p>You can add your own pseudo-selectors to CLSS using <code>DEFINE-PSEUDO-SELECTOR</code>:</p>
+        <pre><code class="line">(<a href="#DEFINE-PSEUDO-SELECTOR">clss:define-pseudo-selector</a> outside-link (node)
+    (let ((href (plump:attribute node href)))
+      (and href (cl-ppcre:scan "^(http|https)://" href))))</code></pre>
+      </article>
+      <article>
+        <header><h2>Other Guff</h2></header>
+        <p>
+          CLSS is licensed under the <a href="http://opensource.org/licenses/Artistic-2.0">Artistic License 2.0</a> and ©2014 TymoonNET/NexT, <a href="http://shinmera.com">Nicolas Hafner</a>.<br/>
+          This library can be obtained via git on <a href="https://github.com/Shinmera/clss.git">https://github.com/Shinmera/clss.git</a>. For questions, patches or suggestions, please contact me via <a href="mailto:shinmera@tymoon.eu">email</a> or open a <a href="https://github.com/Shinmera/clss/issues">github issue</a>.
+        </p>
+      </article>
+      <article>
+        <header><h2>CLSS Package Index</h2></header>
+        <ul id="clss-docs" class="docs"><li id="template">
+            <a class="anchor" name="*PSEUDO-SELECTORS*"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL SPECIAL</span>
+                <code>
+                  <h3><a class="funcname" href="#*PSEUDO-SELECTORS*">*PSEUDO-SELECTORS*</a></h3>
+                  <span class="funcargs"></span>
+                </code>
+              </header>
+              <pre class="funcdesc">Hash table for pseudo selector functions.
+Links string names to functions of one or more arguments.</pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="DEFINE-PSEUDO-SELECTOR"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL MACRO</span>
+                <code>
+                  <h3><a class="funcname" href="#DEFINE-PSEUDO-SELECTOR">DEFINE-PSEUDO-SELECTOR</a></h3>
+                  <span class="funcargs">(NAME (NODENAME &amp;REST ARGS-LAMBDA) &amp;BODY BODY)</span>
+                </code>
+              </header>
+              <pre class="funcdesc">Define a new pseudo-selector of NAME.
+
+NAME        --- A symbol or string naming the selector (case insensitive always).
+NODENAME    --- A variable symbol the matched node is bound to.
+ARGS-LAMBDA --- A lambda-list of the expected arguments for the pseudo-selector.
+                Note that keyword arguments make no sense in this context.
+BODY        ::= form*</pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="MAKE-ANY-CONSTRAINT"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#MAKE-ANY-CONSTRAINT">MAKE-ANY-CONSTRAINT</a></h3>
+                  <span class="funcargs">()</span>
+                </code>
+              </header>
+              <pre class="funcdesc"></pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="MAKE-ATTRIBUTE-CONSTRAINT"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#MAKE-ATTRIBUTE-CONSTRAINT">MAKE-ATTRIBUTE-CONSTRAINT</a></h3>
+                  <span class="funcargs">(ATTRIBUTE &amp;OPTIONAL VALUE (COMPARATOR =))</span>
+                </code>
+              </header>
+              <pre class="funcdesc"></pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="MAKE-CLASS-CONSTRAINT"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#MAKE-CLASS-CONSTRAINT">MAKE-CLASS-CONSTRAINT</a></h3>
+                  <span class="funcargs">(CLASS)</span>
+                </code>
+              </header>
+              <pre class="funcdesc"></pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="MAKE-CLSS-MATCHER"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#MAKE-CLSS-MATCHER">MAKE-CLSS-MATCHER</a></h3>
+                  <span class="funcargs">(&amp;REST CONSTRAINTS)</span>
+                </code>
+              </header>
+              <pre class="funcdesc"></pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="MAKE-ID-CONSTRAINT"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#MAKE-ID-CONSTRAINT">MAKE-ID-CONSTRAINT</a></h3>
+                  <span class="funcargs">(ID)</span>
+                </code>
+              </header>
+              <pre class="funcdesc"></pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="MAKE-PSEUDO-CONSTRAINT"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#MAKE-PSEUDO-CONSTRAINT">MAKE-PSEUDO-CONSTRAINT</a></h3>
+                  <span class="funcargs">(FUNCTION &amp;REST ARGS)</span>
+                </code>
+              </header>
+              <pre class="funcdesc"></pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="MAKE-SELECTOR"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#MAKE-SELECTOR">MAKE-SELECTOR</a></h3>
+                  <span class="funcargs">(&amp;REST MATCHES-AND-OPS)</span>
+                </code>
+              </header>
+              <pre class="funcdesc"></pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="MAKE-TAG-CONSTRAINT"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#MAKE-TAG-CONSTRAINT">MAKE-TAG-CONSTRAINT</a></h3>
+                  <span class="funcargs">(TAG)</span>
+                </code>
+              </header>
+              <pre class="funcdesc"></pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="MATCH-CONSTRAINT"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#MATCH-CONSTRAINT">MATCH-CONSTRAINT</a></h3>
+                  <span class="funcargs">(CONSTRAINT NODE)</span>
+                </code>
+              </header>
+              <pre class="funcdesc">Attempts to match the CONSTRAINT form against the node.
+Returns NIL if it fails to do so, unspecified otherwise.</pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="MATCH-MATCHER"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#MATCH-MATCHER">MATCH-MATCHER</a></h3>
+                  <span class="funcargs">(MATCHER NODE)</span>
+                </code>
+              </header>
+              <pre class="funcdesc">Attempts to match a matcher against a node.
+Returns T if all constraints match, NIL otherwise.</pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="MATCH-PAIR"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#MATCH-PAIR">MATCH-PAIR</a></h3>
+                  <span class="funcargs">(COMBINATOR MATCHER NODES)</span>
+                </code>
+              </header>
+              <pre class="funcdesc">Match a combinator and matcher pair against a list of nodes.
+Returns a vector of matching nodes.</pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="MATCH-SELECTOR"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#MATCH-SELECTOR">MATCH-SELECTOR</a></h3>
+                  <span class="funcargs">(SELECTOR ROOT-NODE)</span>
+                </code>
+              </header>
+              <pre class="funcdesc">Match a selector against the root-node and possibly all its children.
+Returns an array of matched nodes.</pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="NAME"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL GENERIC</span>
+                <code>
+                  <h3><a class="funcname" href="#NAME">NAME</a></h3>
+                  <span class="funcargs">(CONDITION)</span>
+                </code>
+              </header>
+              <pre class="funcdesc"></pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="PARSE-SELECTOR"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#PARSE-SELECTOR">PARSE-SELECTOR</a></h3>
+                  <span class="funcargs">(STRING)</span>
+                </code>
+              </header>
+              <pre class="funcdesc">Parse a selector string into its "compiled" list form.</pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="PSEUDO-SELECTOR-NOT-AVAILABLE"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL CLASS</span>
+                <code>
+                  <h3><a class="funcname" href="#PSEUDO-SELECTOR-NOT-AVAILABLE">PSEUDO-SELECTOR-NOT-AVAILABLE</a></h3>
+                  <span class="funcargs"></span>
+                </code>
+              </header>
+              <pre class="funcdesc">Condition signalled when a pseudo selector is defined according to spec, 
+but makes no sense in the context of CLSS and has thus been left
+unimplemented.</pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="SELECT"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL FUNCTION</span>
+                <code>
+                  <h3><a class="funcname" href="#SELECT">SELECT</a></h3>
+                  <span class="funcargs">(SELECTOR ROOT-NODE)</span>
+                </code>
+              </header>
+              <pre class="funcdesc">Match the given selector against the root-node and possibly all its children.
+Returns an array of matched nodes.
+
+SELECTOR  --- A CSS-selector string or a compiled selector list.
+ROOT-NODE --- The root note to start matching from.</pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="SELECTOR"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL GENERIC</span>
+                <code>
+                  <h3><a class="funcname" href="#SELECTOR">SELECTOR</a></h3>
+                  <span class="funcargs">(CONDITION)</span>
+                </code>
+              </header>
+              <pre class="funcdesc"></pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="SELECTOR-MALFORMED"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL CLASS</span>
+                <code>
+                  <h3><a class="funcname" href="#SELECTOR-MALFORMED">SELECTOR-MALFORMED</a></h3>
+                  <span class="funcargs"></span>
+                </code>
+              </header>
+              <pre class="funcdesc">Signalled when a selector or matcher has been found to be malformed.
+This really shouldn't happen unless you're passing raw lists
+for the selector to the matcher.</pre>
+            </article>
+          </li><li id="template">
+            <a class="anchor" name="UNDEFINED-PSEUDO-SELECTOR"/>
+            <article>
+              <header>
+                <span class="functype">EXTERNAL CLASS</span>
+                <code>
+                  <h3><a class="funcname" href="#UNDEFINED-PSEUDO-SELECTOR">UNDEFINED-PSEUDO-SELECTOR</a></h3>
+                  <span class="funcargs"></span>
+                </code>
+              </header>
+              <pre class="funcdesc">Condition signalled when trying to use a pseudo selector that has not
+been defined. This is signalled at match-time, rather than at
+selector-compile-time.</pre>
+            </article>
+          </li></ul>
+      </article>
+    </div>
+  </body>
+</html>
