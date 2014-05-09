@@ -19,7 +19,6 @@
   :components ((:file "package")
                (:file "selector")
                (:file "parser")
-               (:file "compiler")
                (:file "engine"))
   :depends-on (:plump
                :cl-ppcre))
