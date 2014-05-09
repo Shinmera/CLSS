@@ -19,30 +19,29 @@
 ;; PSEUDO        ::= #\: NAME ARGUMENTS?
 ;; ARGUMENTS     ::= #\( VALUE (#\, VALUE)* #\)
 
-(define-matcher name (or (in #\a #\z) (in #\? #\Z) (in #\- #\9) (is #\\) (is #\_) (is #\!) (is #\#)))
+(define-matcher name (or (is #\-) (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (is #\\) (is #\_) (is #\!)))
 (define-matcher operator (any #\Space #\> #\+ #\~))
-(define-matcher attr-operator (or #\= (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
+(define-matcher attr-operator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
 
 (defun read-name ()
-  (consume-until (make-matcher (not name))))
+  (consume-until (make-matcher (not :name))))
 
 (defun read-any ()
-  (make-instance 'any-constraint))
+  (make-any-constraint))
 
 (defun read-tag ()
-  (make-instance 'tag-constraint :name (read-name)))
+  (make-tag-constraint (read-name)))
 
 (defun read-id ()
-  (make-instance 'id-constraint :name (read-name)))
+  (make-id-constraint (read-name)))
 
 (defun read-class ()
-  (make-instance 'class-constraint :name (read-name)))
+  (make-class-constraint (read-name)))
 
 (defun read-attribute-operator ()
-  (let ((char (consume)))
-    (if (char= char #\=)
-        "="
-        (progn (consume) (format NIL "~a=" char)))))
+  (let ((op (consume-until (make-matcher (not :attr-operator)))))
+    (when (< 0 (length op))
+      op)))
 
 (defun read-attribute-value ()
   (case (peek)
@@ -54,12 +53,12 @@
     (T (consume-until (make-matcher (is #\]))))))
 
 (defun read-attribute ()
-  (prog1
-      (make-instance 'attribute-constraint
-                     :name (read-name)
-                     :operator (read-attribute-operator)
-                     :value (read-attribute-value))
-    (consume)))
+  (let ((name (read-name))
+        (oper (read-attribute-operator))
+        (val (read-attribute-value)))
+    (prog1
+        (make-attribute-constraint name val oper)
+      (consume))))
 
 (defun read-args ()
   (when (char= (or (peek) #\Space) #\()
@@ -78,8 +77,9 @@
                     (return (nreverse args))))))
 
 (defun read-pseudo ()
-  (make-instance 'pseudo-constraint :name (read-name) :args (read-args)))
+  (apply #'make-pseudo-constraint (read-name) (read-args)))
 
+;; Make generic
 (defun read-constraint ()
   (case (consume)
     (#\* (read-any))
@@ -90,27 +90,26 @@
     (T (unread) (read-tag))))
 
 (defun read-matcher ()
-  (loop with matcher = (make-instance 'matcher)
-        for peek = (peek)
-        while (and peek (funcall (make-matcher (not operator))))
+  (loop for peek = (peek)
+        while (and peek (funcall (make-matcher (not :operator))))
         for constraint = (read-constraint)
         when constraint
-          do (add-constraint matcher constraint)
-        finally (return matcher)))
+          collect constraint into constraints
+        finally (return (apply #'make-clss-matcher constraints))))
 
 (defun read-operator ()
-  (let ((op (string-trim " " (consume-until (make-matcher (not operator))))))
+  (let ((op (string-trim " " (consume-until (make-matcher (not :operator))))))
     (when (peek) (if (string= op "") " " op))))
 
 (defun read-selector ()
-  (loop with selector = (make-instance 'selector)
+  (loop with list = ()
         for matcher = (read-matcher)
         for operator = (read-operator)
-        do (add-matcher selector matcher)
+        do (push matcher list)
            (when operator
-             (add-operator selector operator))
+             (push operator list))
         while operator
-        finally (return selector)))
+        finally (return (apply #'make-selector (nreverse list)))))
 
 (defun parse-selector (string)
   (with-lexer-environment (string)
