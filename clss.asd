@@ -10,7 +10,7 @@
 
 (defsystem clss
   :name "CSS Like Simple Selectors"
-  :version "0.1.0"
+  :version "0.1.2"
   :license "Artistic"
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"

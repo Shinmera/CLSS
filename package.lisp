@@ -9,4 +9,38 @@
   (:nicknames #:org.tymoonnext.clss)
   (:use #:cl #:plump)
   (:shadow #:read-name #:read-attribute #:read-attribute-value)
-  (:export))
+  ;; engine.lisp
+  (:export
+   #:*pseudo-selectors*
+   
+   #:define-pseudo-selector
+   
+   #:pseudo-selector-not-available
+   #:name
+   
+   #:undefined-pseudo-selector
+   #:name
+   
+   #:selector-malformed
+   #:selector
+   
+   #:match-constraint
+   #:match-matcher
+   #:match-pair
+   #:match-selector
+   
+   #:select)
+  ;; parser.lisp
+  (:export
+   #:parse-selector)
+  ;; selector.lisp
+  (:export
+   #:make-selector
+   #:make-clss-matcher
+   #:make-any-constraint
+   #:make-tag-constraint
+   #:make-id-constraint
+   #:make-class-constraint
+   #:make-attribute-constraint
+   #:make-pseudo-constraint)
+  )
