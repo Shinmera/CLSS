@@ -58,7 +58,7 @@
              (#\|
               (cl-ppcre:scan (format NIL "(^|-)~a(-|$)" value) attr)))))))
     (:c-pseudo
-     (destructuring-bind (name args) (cdr constraint)
+     (destructuring-bind (name &rest args) (cdr constraint)
        (let ((pseudo (gethash name *pseudo-selectors*)))
          (assert (not (null pseudo)) () 'undefined-pseudo-selector :name name)
          (apply pseudo item args))))))
