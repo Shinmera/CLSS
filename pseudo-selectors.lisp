@@ -131,4 +131,4 @@
       (cl-ppcre:scan *warning-regex* classes))))
 
 (define-pseudo-selector not (node selector)
-  )
+  (not (match-matcher (third (parse-selector selector)) node)))
