@@ -20,8 +20,8 @@
 ;; ARGUMENTS     ::= #\( VALUE (#\, VALUE)* #\)
 
 (define-matcher name (or (is #\-) (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (is #\\) (is #\_) (is #\!)))
-(define-matcher operator (any #\Space #\> #\+ #\~))
-(define-matcher attr-operator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
+(define-matcher combinator (any #\Space #\> #\+ #\~))
+(define-matcher attr-combinator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
 
 (defun read-name ()
   (consume-until (make-matcher (not :name))))
@@ -38,8 +38,8 @@
 (defun read-class ()
   (make-class-constraint (read-name)))
 
-(defun read-attribute-operator ()
-  (let ((op (consume-until (make-matcher (not :attr-operator)))))
+(defun read-attribute-combinator ()
+  (let ((op (consume-until (make-matcher (not :attr-combinator)))))
     (when (< 0 (length op))
       op)))
 
@@ -54,7 +54,7 @@
 
 (defun read-attribute ()
   (let ((name (read-name))
-        (oper (read-attribute-operator))
+        (oper (read-attribute-combinator))
         (val (read-attribute-value)))
     (prog1
         (make-attribute-constraint name val oper)
@@ -91,26 +91,34 @@
 
 (defun read-matcher ()
   (loop for peek = (peek)
-        while (and peek (funcall (make-matcher (not :operator))))
+        while (and peek (funcall (make-matcher (not :combinator))))
         for constraint = (read-constraint)
         when constraint
           collect constraint into constraints
         finally (return (apply #'make-clss-matcher constraints))))
 
-(defun read-operator ()
-  (let ((op (string-trim " " (consume-until (make-matcher (not :operator))))))
+(defun read-combinator ()
+  (let ((op (string-trim " " (consume-until (make-matcher (not :combinator))))))
     (when (peek) (if (string= op "") " " op))))
 
 (defun read-selector ()
   (loop with list = ()
+        for combinator = (read-combinator)
         for matcher = (read-matcher)
-        for operator = (read-operator)
-        do (push matcher list)
-           (when operator
-             (push operator list))
-        while operator
+        while combinator
+        do (push combinator list)
+           (push matcher list)
         finally (return (apply #'make-selector (nreverse list)))))
 
-(defun parse-selector (string)
+(defun %parse-selector (string)
+  (setf string (concatenate 'string " " string))
   (with-lexer-environment (string)
     (read-selector)))
+
+(defun parse-selector (string)
+  (%parse-selector string))
+
+(define-compiler-macro parse-selector (string)
+  (if (stringp string)
+      (%parse-selector string)
+      `(%parse-selector ,string)))
