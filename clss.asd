@@ -19,6 +19,7 @@
   :components ((:file "package")
                (:file "selector")
                (:file "parser")
-               (:file "engine"))
+               (:file "engine")
+               (:file "pseudo-selectors"))
   :depends-on (:plump
                :cl-ppcre))
