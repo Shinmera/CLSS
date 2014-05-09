@@ -19,27 +19,27 @@
 ;; PSEUDO        ::= #\: NAME ARGUMENTS?
 ;; ARGUMENTS     ::= #\( VALUE (#\, VALUE)* #\)
 
-(define-matcher name (or (is #\-) (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (is #\\) (is #\_) (is #\!)))
+(define-matcher clss-name (or (is #\-) (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (is #\\) (is #\_) (is #\!)))
 (define-matcher combinator (any #\Space #\> #\+ #\~))
-(define-matcher attr-combinator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
+(define-matcher attr-comparator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
 
 (defun read-name ()
-  (consume-until (make-matcher (not :name))))
+  (consume-until (make-matcher (not :clss-name))))
 
-(defun read-any ()
+(defun read-any-constraint ()
   (make-any-constraint))
 
-(defun read-tag ()
+(defun read-tag-constraint ()
   (make-tag-constraint (read-name)))
 
-(defun read-id ()
+(defun read-id-constraint ()
   (make-id-constraint (read-name)))
 
-(defun read-class ()
+(defun read-class-constraint ()
   (make-class-constraint (read-name)))
 
-(defun read-attribute-combinator ()
-  (let ((op (consume-until (make-matcher (not :attr-combinator)))))
+(defun read-attribute-comparator ()
+  (let ((op (consume-until (make-matcher (not :attr-comparator)))))
     (when (< 0 (length op))
       op)))
 
@@ -52,15 +52,15 @@
        (consume)))
     (T (consume-until (make-matcher (is #\]))))))
 
-(defun read-attribute ()
+(defun read-attribute-constraint ()
   (let ((name (read-name))
-        (oper (read-attribute-combinator))
+        (oper (read-attribute-comparator))
         (val (read-attribute-value)))
     (prog1
         (make-attribute-constraint name val oper)
       (consume))))
 
-(defun read-args ()
+(defun read-pseudo-args ()
   (when (char= (or (peek) #\Space) #\()
     (consume)
     (loop with index = plump::*index*
@@ -76,18 +76,18 @@
                         (push arg args)))
                     (return (nreverse args))))))
 
-(defun read-pseudo ()
-  (apply #'make-pseudo-constraint (read-name) (read-args)))
+(defun read-pseudo-constraint ()
+  (apply #'make-pseudo-constraint (read-name) (read-pseudo-args)))
 
 ;; Make generic
 (defun read-constraint ()
   (case (consume)
-    (#\* (read-any))
-    (#\# (read-id))
-    (#\. (read-class))
-    (#\[ (read-attribute))
-    (#\: (read-pseudo))
-    (T (unread) (read-tag))))
+    (#\* (read-any-constraint))
+    (#\# (read-id-constraint))
+    (#\. (read-class-constraint))
+    (#\[ (read-attribute-constraint))
+    (#\: (read-pseudo-constraint))
+    (T (unread) (read-tag-constraint))))
 
 (defun read-matcher ()
   (loop for peek = (peek)
