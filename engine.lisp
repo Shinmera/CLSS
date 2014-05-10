@@ -59,7 +59,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
     (:c-id
      (string-equal (attribute node "id") (second constraint)))
     (:c-class
-     (cl-ppcre:scan (format NIL "\\b~a\\b" (second constraint)) (or (attribute node "class") "")))
+     (cl-ppcre:scan (format NIL "(^| )~a( |$)" (second constraint)) (or (attribute node "class") "")))
     (:c-attr-exists
      (attribute node (second constraint)))
     (:c-attr-equals
@@ -70,7 +70,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
              (#\=
               (string-equal attr value))
              (#\~
-              (cl-ppcre:scan (format NIL "\\b~a\\b" value) attr))
+              (cl-ppcre:scan (format NIL "(^| )~a( |$)" value) attr))
              (#\^
               (and (<= (length value) (length attr))
                        (string= value attr :end2 (length value))))
@@ -108,7 +108,8 @@ Returns a vector of matching nodes."
                               do (vector-push-extend node resultset)
                             when (nesting-node-p node)
                               do (match-recursive (children node)))))
-             (match-recursive nodes)))
+             (loop for node across nodes
+                   do (match-recursive (children node)))))
           (#\>
            (loop for node across nodes
                  when (and (element-p node)
