@@ -111,10 +111,11 @@ Returns a vector of matching nodes."
              (loop for node across nodes
                    do (match-recursive (children node)))))
           (#\>
-           (loop for node across nodes
-                 when (and (element-p node)
-                           (match-matcher matcher node))
-                   do (vector-push-extend node resultset)))
+           (loop for parent across nodes
+                 do (loop for node across (children parent)
+                          when (and (element-p node)
+                                    (match-matcher matcher node))
+                            do (vector-push-extend node resultset))))
           (#\+
            (loop for node across nodes
                  for sibling = (next-element node)
