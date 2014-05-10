@@ -131,3 +131,8 @@
 
 (define-pseudo-selector not (node selector)
   (not (match-matcher (third (parse-selector selector)) node)))
+
+;;; Extra extensions specific to CLSS
+
+(define-pseudo-selector first-only (node)
+  (signal 'complete-match-pair :value (make-array 1 :initial-element node)))

@@ -44,6 +44,10 @@ selector-compile-time."))
 This really shouldn't happen unless you're passing raw lists
 for the selector to the matcher."))
 
+(define-condition complete-match-pair (condition)
+  ((%value :initarg :value :initform NIL :accessor value))
+  (:documentation "Condition signalled to immediately return from MATCH-PAIR."))
+
 (defun match-constraint (constraint node)
   "Attempts to match the CONSTRAINT form against the node.
 Returns NIL if it fails to do so, unspecified otherwise."
@@ -93,45 +97,48 @@ Returns T if all constraints match, NIL otherwise."
 (defun match-pair (combinator matcher nodes)
   "Match a combinator and matcher pair against a list of nodes.
 Returns a vector of matching nodes."
-  (let ((resultset (make-array (length nodes) :adjustable T :fill-pointer 0)))
-    (case (aref combinator 0)
-      (#\Space
-       (labels ((match-recursive (nodes)
-                  (loop for node across nodes
-                        when (and (element-p node)
-                                  (match-matcher matcher node))
-                          do (vector-push-extend node resultset)
-                        when (nesting-node-p node)
-                          do (match-recursive (children node)))))
-         (match-recursive nodes)))
-      (#\>
-       (loop for node across nodes
-             when (and (element-p node)
-                       (match-matcher matcher node))
-               do (vector-push-extend node resultset)))
-      (#\+
-       (loop for node across nodes
-             for sibling = (next-element node)
-             when (and sibling (match-matcher matcher sibling))
-               do (vector-push-extend sibling resultset)))
-      (#\~
-       (loop for node across nodes
-             for position = (child-position node)
-             do (loop for i from position below (length (family node))
-                      for sibling = (elt (family node) i)
-                      when (and (element-p sibling)
-                                (match-matcher matcher sibling))
-                        do (vector-push-extend sibling resultset)))))
-    resultset))
+  (handler-case
+      (let ((resultset (make-array (length nodes) :adjustable T :fill-pointer 0)))
+        (case (aref combinator 0)
+          (#\Space
+           (labels ((match-recursive (nodes)
+                      (loop for node across nodes
+                            when (and (element-p node)
+                                      (match-matcher matcher node))
+                              do (vector-push-extend node resultset)
+                            when (nesting-node-p node)
+                              do (match-recursive (children node)))))
+             (match-recursive nodes)))
+          (#\>
+           (loop for node across nodes
+                 when (and (element-p node)
+                           (match-matcher matcher node))
+                   do (vector-push-extend node resultset)))
+          (#\+
+           (loop for node across nodes
+                 for sibling = (next-element node)
+                 when (and sibling (match-matcher matcher sibling))
+                   do (vector-push-extend sibling resultset)))
+          (#\~
+           (loop for node across nodes
+                 for position = (child-position node)
+                 do (loop for i from position below (length (family node))
+                          for sibling = (elt (family node) i)
+                          when (and (element-p sibling)
+                                    (match-matcher matcher sibling))
+                            do (vector-push-extend sibling resultset)))))
+        resultset)
+    (complete-match-pair (o)
+      (return-from match-pair (value o)))))
 
 (defun match-selector (selector root-node)
   "Match a selector against the root-node and possibly all its children.
 Returns an array of matched nodes."
   (assert (eq (pop selector) :selector) () 'selector-malformed)
   (loop with nodes = (etypecase root-node
-                     (node (make-array 1 :initial-element root-node))
-                     (vector root-node)
-                     (list (coerce root-node 'vector)))
+                       (node (make-array 1 :initial-element root-node))
+                       (vector root-node)
+                       (list (coerce root-node 'vector)))
         for combinator = (pop selector)
         for matcher = (pop selector)
         while matcher
