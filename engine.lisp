@@ -48,9 +48,14 @@ for the selector to the matcher."))
   ((%value :initarg :value :initform NIL :accessor value))
   (:documentation "Condition signalled to immediately return from MATCH-PAIR."))
 
+(defvar *whitespace-regex* (cl-ppcre:create-scanner "\\s+"))
+(defvar *hyphen-regex* (cl-ppcre:create-scanner "-"))
+
+(declaim (ftype (function (list plump-dom:node) (values boolean)) match-constraint))
 (defun match-constraint (constraint node)
   "Attempts to match the CONSTRAINT form against the node.
 Returns NIL if it fails to do so, unspecified otherwise."
+  (declare (optimize (speed 3)))
   (ecase (car constraint)
     (:c-any
      T)
@@ -59,18 +64,20 @@ Returns NIL if it fails to do so, unspecified otherwise."
     (:c-id
      (string-equal (attribute node "id") (second constraint)))
     (:c-class
-     (cl-ppcre:scan (format NIL "(^| )~a( |$)" (second constraint)) (or (attribute node "class") "")))
+     (not (null (member (second constraint) (cl-ppcre:split *whitespace-regex* (or (attribute node "class") "")) :test #'string-equal))))
     (:c-attr-exists
-     (attribute node (second constraint)))
+     (not (null (attribute node (second constraint)))))
     (:c-attr-equals
      (destructuring-bind (comparator attribute value) (cdr constraint)
+       (declare (simple-string comparator attribute value))
        (let ((attr (attribute node attribute)))
+         (declare (simple-string attr))
          (when attr
            (ecase (aref comparator 0)
              (#\=
               (string-equal attr value))
              (#\~
-              (cl-ppcre:scan (format NIL "(^| )~a( |$)" value) attr))
+              (not (null (member value (cl-ppcre:split *whitespace-regex* attr) :test #'string-equal))))
              (#\^
               (and (<= (length value) (length attr))
                        (string= value attr :end2 (length value))))
@@ -78,75 +85,48 @@ Returns NIL if it fails to do so, unspecified otherwise."
               (and (<= (length value) (length attr))
                        (string= value attr :start2 (- (length attr) (length value)))))
              (#\*
-              (search value attr))
+              (not (null (search value attr))))
              (#\|
-              (cl-ppcre:scan (format NIL "(^|-)~a(-|$)" value) attr)))))))
+              (not (null (member value (cl-ppcre:split *hyphen-regex* attr) :test #'string-equal)))))))))
     (:c-pseudo
      (destructuring-bind (name &rest args) (cdr constraint)
        (let ((pseudo (gethash name *pseudo-selectors*)))
+         (declare (function pseudo))
          (assert (not (null pseudo)) () 'undefined-pseudo-selector :name name)
-         (apply pseudo node args))))))
+         (not (null (apply pseudo node args))))))))
 
+(declaim (ftype (function (list plump:node) (values boolean)) match-matcher))
 (defun match-matcher (matcher node)
   "Attempts to match a matcher against a node.
 Returns T if all constraints match, NIL otherwise."
-  (assert (eq (pop matcher) :matcher) () 'selector-malformed matcher)
-  (loop for constraint in matcher
+  (declare (optimize (speed 3)))
+  (assert (eq (car matcher) :matcher) () 'selector-malformed matcher)
+  (loop for constraint in (cdr matcher)
         always (match-constraint constraint node)))
 
-(defun match-pair (combinator matcher nodes)
-  "Match a combinator and matcher pair against a list of nodes.
-Returns a vector of matching nodes."
-  (handler-case
-      (let ((resultset (make-array (length nodes) :adjustable T :fill-pointer 0)))
-        (case (aref combinator 0)
-          (#\Space
-           (labels ((match-recursive (nodes)
-                      (loop for node across nodes
-                            when (and (element-p node)
-                                      (match-matcher matcher node))
-                              do (vector-push-extend node resultset)
-                            when (nesting-node-p node)
-                              do (match-recursive (children node)))))
-             (loop for node across nodes
-                   do (match-recursive (children node)))))
-          (#\>
-           (loop for parent across nodes
-                 do (loop for node across (children parent)
-                          when (and (element-p node)
-                                    (match-matcher matcher node))
-                            do (vector-push-extend node resultset))))
-          (#\+
-           (loop for node across nodes
-                 for sibling = (next-element node)
-                 when (and sibling (match-matcher matcher sibling))
-                   do (vector-push-extend sibling resultset)))
-          (#\~
-           (loop for node across nodes
-                 for position = (child-position node)
-                 do (loop for i from position below (length (family node))
-                          for sibling = (elt (family node) i)
-                          when (and (element-p sibling)
-                                    (match-matcher matcher sibling))
-                            do (vector-push-extend sibling resultset)))))
-        resultset)
-    (complete-match-pair (o)
-      (return-from match-pair (value o)))))
-
+(defvar *selectors*)
+(declaim (ftype (function (list plump:node) (values (and (vector plump:node) (not simple-array)))) match-selector))
 (defun match-selector (selector root-node)
   "Match a selector against the root-node and possibly all its children.
 Returns an array of matched nodes."
-  (assert (eq (pop selector) :selector) () 'selector-malformed)
-  (loop with nodes = (etypecase root-node
-                       (node (make-array 1 :initial-element root-node))
-                       (vector root-node)
-                       (list (coerce root-node 'vector)))
-        for combinator = (pop selector)
-        for matcher = (pop selector)
-        while matcher
-        do (setf nodes (match-pair combinator matcher nodes))
-        finally (return nodes)))
+  (declare (optimize (speed 3)))
+  (assert (eq (car selector) :selector) () 'selector-malformed)
+  (let ((*selectors* (list (cdr selector)))
+        (results (make-array 0 :adjustable T :fill-pointer 0 :element-type 'plump:node)))
+    (labels ((r (node)
+               (loop for child across (children node)
+                     when (plump:element-p child)
+                       do (let ((*selectors* *selectors*))
+                            (loop for selector in *selectors*
+                                  do (when (match-matcher (second selector) child)
+                                       (if (cddr selector)
+                                           (setf *selectors* (cons (cddr selector) *selectors*))
+                                           (vector-push-extend child results))))
+                            (r child)))))
+      (r root-node))
+    results))
 
+(declaim (ftype (function (T plump:node) (values (and (vector plump:node) (not simple-array)) &optional)) %select select))
 (defun %select (selector root-node)
   (match-selector (etypecase selector
                     (list selector)
