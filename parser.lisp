@@ -22,6 +22,7 @@
 (define-matcher clss-name (or (is #\-) (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (is #\\) (is #\_) (is #\!)))
 (define-matcher combinator (any #\Space #\> #\+ #\~))
 (define-matcher attr-comparator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
+(defvar *valid-combinators* '(" "))
 
 (defun read-name ()
   "Reads a CSS selector name-like string."
@@ -119,7 +120,9 @@
         for combinator = (read-combinator)
         for matcher = (read-matcher)
         while combinator
-        do (push combinator list)
+        do (unless (find combinator *valid-combinators* :test #'string-equal)
+             (error "Invalid combinator ~a." combinator))
+           (push combinator list)
            (push matcher list)
         finally (return (apply #'make-selector (nreverse list)))))
 
