@@ -51,7 +51,9 @@ for the selector to the matcher."))
 (defvar *whitespace-regex* (cl-ppcre:create-scanner "\\s+"))
 (defvar *hyphen-regex* (cl-ppcre:create-scanner "-"))
 
-(declaim (ftype (function (list plump-dom:node) (values boolean)) match-constraint))
+(declaim (ftype (function (list plump-dom:node)
+                          (values boolean))
+                match-constraint))
 (defun match-constraint (constraint node)
   "Attempts to match the CONSTRAINT form against the node.
 Returns NIL if it fails to do so, unspecified otherwise."
@@ -69,9 +71,9 @@ Returns NIL if it fails to do so, unspecified otherwise."
      (not (null (attribute node (second constraint)))))
     (:c-attr-equals
      (destructuring-bind (comparator attribute value) (cdr constraint)
-       (declare (simple-string comparator attribute value))
+       (declare ((and simple-string (not simple-base-string)) comparator attribute value))
        (let ((attr (attribute node attribute)))
-         (declare (simple-string attr))
+         (declare ((and simple-string (not simple-base-string)) attr))
          (when attr
            (ecase (aref comparator 0)
              (#\=
@@ -95,7 +97,9 @@ Returns NIL if it fails to do so, unspecified otherwise."
          (assert (not (null pseudo)) () 'undefined-pseudo-selector :name name)
          (not (null (apply pseudo node args))))))))
 
-(declaim (ftype (function (list plump:node) (values boolean)) match-matcher))
+(declaim (ftype (function (list plump:node)
+                          (values boolean))
+                match-matcher))
 (defun match-matcher (matcher node)
   "Attempts to match a matcher against a node.
 Returns T if all constraints match, NIL otherwise."
@@ -150,7 +154,9 @@ Returns a vector of matching nodes."
     (complete-match-pair (o)
       (return-from match-pair (value o)))))
 
-(declaim (ftype (function (list (or plump:node vector list)) (values (and (vector plump:node) (not simple-array)))) match-selector))
+(declaim (ftype (function (list (or plump:node vector list))
+                          (values (and (vector plump:node) (not simple-array))))
+                match-selector))
 (defun match-selector (selector root-node)
   "Match a selector against the root-node and possibly all its children.
 Returns an array of matched nodes."
@@ -167,7 +173,9 @@ Returns an array of matched nodes."
           do (setf nodes (match-pair combinator matcher nodes))
           finally (return nodes))))
 
-(declaim (ftype (function (T plump:node) (values (and (vector plump:node) (not simple-array)) &optional)) %select select))
+(declaim (ftype (function (T plump:node)
+                          (values (and (vector plump:node) (not simple-array)) &optional))
+                %select select))
 (defun %select (selector root-node)
   (match-selector (etypecase selector
                     (list selector)
