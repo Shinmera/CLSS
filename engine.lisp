@@ -104,27 +104,68 @@ Returns T if all constraints match, NIL otherwise."
   (loop for constraint in (cdr matcher)
         always (match-constraint constraint node)))
 
-(defvar *selectors*)
-(declaim (ftype (function (list plump:node) (values (and (vector plump:node) (not simple-array)))) match-selector))
+(declaim (ftype (function (simple-string list (and (vector plump:node) (not simple-array)))
+                          (values (and (vector plump:node) (not simple-array)) &optional)) match-pair))
+(defun match-pair (combinator matcher nodes)
+  "Match a combinator and matcher pair against a list of nodes.
+Returns a vector of matching nodes."
+  (declare (optimize (speed 3)))
+  (handler-case
+      (let ((resultset (make-array (length nodes) :adjustable T :fill-pointer 0)))
+        (case (aref combinator 0)
+          (#\Space
+           (labels ((match-recursive (nodes)
+                      (declare ((and (vector plump:node) (not simple-array)) nodes))
+                      (loop for node across nodes
+                            when (and (element-p node)
+                                      (match-matcher matcher node))
+                              do (vector-push-extend node resultset)
+                            when (nesting-node-p node)
+                              do (match-recursive (children node)))))
+             (loop for node across nodes
+                   do (match-recursive (children node)))))
+          (#\>
+           (loop for parent across nodes
+                 do (loop for node across (the (and (vector plump:node) (not simple-array))
+                                               (children parent))
+                          when (and (element-p node)
+                                    (match-matcher matcher node))
+                            do (vector-push-extend node resultset))))
+          (#\+
+           (loop for node across nodes
+                 for sibling = (next-element node)
+                 when (and sibling (match-matcher matcher sibling))
+                   do (vector-push-extend sibling resultset)))
+          (#\~
+           (loop for node across nodes
+                 for position = (child-position node)
+                 for family = (the (and (vector plump:node) (not simple-array))
+                                   (family node))
+                 do (loop for i of-type fixnum from position below (length family)
+                          for sibling = (elt family i)
+                          when (and (element-p sibling)
+                                    (match-matcher matcher sibling))
+                            do (vector-push-extend sibling resultset)))))
+        resultset)
+    (complete-match-pair (o)
+      (return-from match-pair (value o)))))
+
+(declaim (ftype (function (list (or plump:node vector list)) (values (and (vector plump:node) (not simple-array)))) match-selector))
 (defun match-selector (selector root-node)
   "Match a selector against the root-node and possibly all its children.
 Returns an array of matched nodes."
   (declare (optimize (speed 3)))
   (assert (eq (car selector) :selector) () 'selector-malformed)
-  (let ((*selectors* (list (cdr selector)))
-        (results (make-array 0 :adjustable T :fill-pointer 0 :element-type 'plump:node)))
-    (labels ((r (node)
-               (loop for child across (children node)
-                     when (plump:element-p child)
-                       do (let ((*selectors* *selectors*))
-                            (loop for selector in *selectors*
-                                  do (when (match-matcher (second selector) child)
-                                       (if (cddr selector)
-                                           (setf *selectors* (cons (cddr selector) *selectors*))
-                                           (vector-push-extend child results))))
-                            (r child)))))
-      (r root-node))
-    results))
+  (let ((selector (cdr selector)))
+    (loop with nodes = (etypecase root-node
+                         (plump:node (make-array 1 :initial-element root-node :adjustable T :fill-pointer T))
+                         (vector root-node)
+                         (list (coerce root-node 'vector)))
+          for combinator = (pop selector)
+          for matcher = (pop selector)
+          while matcher
+          do (setf nodes (match-pair combinator matcher nodes))
+          finally (return nodes))))
 
 (declaim (ftype (function (T plump:node) (values (and (vector plump:node) (not simple-array)) &optional)) %select select))
 (defun %select (selector root-node)
