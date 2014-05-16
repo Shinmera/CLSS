@@ -209,38 +209,46 @@ ROOT-NODE --- A single node, list or vector of nodes to start matching from."
     (string `(%select ',(parse-selector selector) ,root-node))
     (T `(%select ,selector ,root-node))))
 
-
-(defun %node-matches-p (selector node)
-  (let ((selector (reverse (cdr (etypecase selector
-                                  (list selector)
-                                  (string (parse-selector selector)))))))
-    (when (match-matcher (pop selector) node)
-      (loop for combinator = (pop selector)
-            for matcher = (pop selector)
+(declaim (ftype (function (list plump:node) boolean) match-group-backwards))
+(defun match-group-backwards (group node)
+  (declare (optimize (speed 3)))
+  (let ((group (reverse (cdr group))))
+    (when (match-matcher (pop group) node)
+      (loop for combinator = (pop group)
+            for matcher = (pop group)
             while matcher
             do (case combinator
                  (#\Space
                   (loop do (setf node (parent node))
                            (when (or (not node) (root-p node))
-                             (return-from %node-matches-p NIL))
+                             (return-from match-group-backwards NIL))
                         until (match-matcher matcher node)))
                  (#\>
                   (setf node (parent node))
                   (unless (and node (not (root-p node)) (match-matcher matcher node))
-                    (return-from %node-matches-p NIL)))
+                    (return-from match-group-backwards NIL)))
                  (#\+
                   (setf node (previous-element node))
                   (unless (and node (match-matcher matcher node))
-                    (return-from %node-matches-p NIL)))
+                    (return-from match-group-backwards NIL)))
                  (#\~
-                  (loop for i downfrom (child-position node) above 0
+                  (loop for i of-type fixnum downfrom (child-position node) above 0
                         for sibling = (aref (family node) i)
                         do (when (and (element-p sibling)
                                       (match-matcher matcher sibling))
                              (setf node sibling)
                              (return))
-                        finally (return-from %node-matches-p NIL))))
+                        finally (return-from match-group-backwards NIL))))
             finally (return T)))))
+
+(declaim (ftype (function (T plump:node) boolean) %node-matches-p node-matches-p))
+(defun %node-matches-p (selector node)
+  (declare (optimize (speed 3)))
+  (let ((selector (cdr (etypecase selector
+                         (list selector)
+                         (string (parse-selector selector))))))
+    (loop for group in selector
+          thereis (match-group-backwards group node))))
 
 (defun node-matches-p (selector node)
   "Tests whether the node matches the selector.
