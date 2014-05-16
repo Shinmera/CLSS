@@ -157,21 +157,35 @@ Returns a vector of matching nodes."
 (declaim (ftype (function (list (or plump:node vector list))
                           (values (and (vector plump:node) (not simple-array))))
                 match-selector))
+(defun match-group (group root-node)
+  "Match a matcher group against the root-node and possibly all its children.
+Returns an array of mached nodes."
+  (declare (optimize (speed 3)))
+  (assert (eq (car group) :group) () 'selector-malformed)
+  (let ((group (cdr group)))
+    (loop with nodes = (etypecase root-node
+                         (plump:node (make-array 1 :initial-element root-node :adjustable T :fill-pointer T))
+                         (vector root-node)
+                         (list (coerce root-node 'vector)))
+          for combinator = (pop group)
+          for matcher = (pop group)
+          while matcher
+          do (setf nodes (match-pair combinator matcher nodes))
+          finally (return nodes))))
+
+(declaim (ftype (function (list (or plump:node vector list))
+                          (values (and (vector plump:node) (not simple-array))))
+                match-selector))
 (defun match-selector (selector root-node)
   "Match a selector against the root-node and possibly all its children.
 Returns an array of matched nodes."
   (declare (optimize (speed 3)))
   (assert (eq (car selector) :selector) () 'selector-malformed)
   (let ((selector (cdr selector)))
-    (loop with nodes = (etypecase root-node
-                         (plump:node (make-array 1 :initial-element root-node :adjustable T :fill-pointer T))
-                         (vector root-node)
-                         (list (coerce root-node 'vector)))
-          for combinator = (pop selector)
-          for matcher = (pop selector)
-          while matcher
-          do (setf nodes (match-pair combinator matcher nodes))
-          finally (return nodes))))
+    (loop with result = (match-group (pop selector) root-node)
+          for group in selector
+          do (plump::vector-append result (match-group group root-node))
+          finally (return result))))
 
 (declaim (ftype (function (T (or plump:node vector list))
                           (values (and (vector plump:node) (not simple-array)) &optional))
