@@ -29,7 +29,9 @@
    #:match-pair
    #:match-selector
    
-   #:select)
+   #:select
+
+   #:node-matches-p)
   ;; parser.lisp
   (:export
    #:parse-selector)

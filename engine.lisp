@@ -194,3 +194,49 @@ ROOT-NODE --- The root note to start matching from."
     (list `(%select ',selector ,root-node))
     (string `(%select ',(parse-selector selector) ,root-node))
     (T `(%select ,selector ,root-node))))
+
+
+(defun %node-matches-p (selector node)
+  (let ((selector (reverse (cdr (etypecase selector
+                                  (list selector)
+                                  (string (parse-selector selector)))))))
+    (when (match-matcher (pop selector) node)
+      (loop for combinator = (pop selector)
+            for matcher = (pop selector)
+            while matcher
+            do (case combinator
+                 (#\Space
+                  (loop do (setf node (parent node))
+                           (when (or (not node) (root-p node))
+                             (return-from %node-matches-p NIL))
+                        until (match-matcher matcher node)))
+                 (#\>
+                  (setf node (parent node))
+                  (unless (and node (not (root-p node)) (match-matcher matcher node))
+                    (return-from %node-matches-p NIL)))
+                 (#\+
+                  (setf node (previous-element node))
+                  (unless (and node (match-matcher matcher node))
+                    (return-from %node-matches-p NIL)))
+                 (#\~
+                  (loop for i downfrom (child-position node) above 0
+                        for sibling = (aref (family node) i)
+                        do (when (and (element-p sibling)
+                                      (match-matcher matcher sibling))
+                             (setf node sibling)
+                             (return))
+                        finally (return-from %node-matches-p NIL))))
+            finally (return T)))))
+
+(defun node-matches-p (selector node)
+  "Tests whether the node matches the selector.
+
+SELECTOR --- A CSS-selector string or a compiled selector list.
+NODE     --- The node to test."
+  (%node-matches-p selector node))
+
+(define-compiler-macro node-matches-p (selector root-node)
+  (typecase selector
+    (list `(%node-matches-p ',selector ,root-node))
+    (string `(%node-matches-p ',(parse-selector selector) ,root-node))
+    (T `(%select ,selector ,root-node))))
