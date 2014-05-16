@@ -7,7 +7,8 @@
 (in-package #:org.tymoonnext.clss)
 
 ;;; Selector grammar
-;; SELECTOR      ::= MATCHER (OPERATOR MATCHER)*
+;; SELECTOR      ::= GROUP (, GROUP)*
+;; GROUP         ::= MATCHER (OPERATOR MATCHER)*
 ;; OPERATOR      ::= #\> | #\+ | #\~ | #\Space
 ;; MATCHER       ::= (#\* | TAG | ID | CLASS | ATTRIBUTE) ID? CLASS* ATTRIBUTE* PSEUDO*
 ;; ID            ::= #\# NAME
@@ -21,6 +22,7 @@
 
 (define-matcher clss-name (or (is #\-) (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (is #\\) (is #\_) (is #\!)))
 (define-matcher combinator (any #\Space #\> #\+ #\~))
+(define-matcher grouper (is #\,))
 (define-matcher attr-comparator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
 (defvar *valid-combinators* " >+~")
 
@@ -103,7 +105,7 @@
 (defun read-matcher ()
   "Read a matcher (a sequence of constraints) and return it."
   (loop for peek = (peek)
-        while (and peek (funcall (make-matcher (not :combinator))))
+        while (and peek (funcall (make-matcher (not (or :combinator :grouper)))))
         for constraint = (read-constraint)
         when constraint
           collect constraint into constraints
@@ -111,11 +113,16 @@
 
 (defun read-combinator ()
   "Reads the combinator between matchers and returns it."
-  (let ((op (string-trim " " (consume-until (make-matcher (not :combinator))))))
-    (when (peek) (aref (if (string= op "") " " op) 0))))
+  (let ((op (consume-until (make-matcher (not :combinator))))
+        (next (peek)))
+    (unless (or (not next) (char= next #\,))
+      (let ((op (string-trim " " op)))
+        (if (string= op "")
+            #\Space
+            (aref op 0))))))
 
-(defun read-selector ()
-  "Reads a complete CSS selector and returns it."
+(defun read-group ()
+  "Reads a selector group and returns it."
   (loop with list = ()
         for combinator = (read-combinator)
         for matcher = (read-matcher)
@@ -124,7 +131,16 @@
              (error "Invalid combinator ~a." combinator))
            (push combinator list)
            (push matcher list)
-        finally (return (apply #'make-selector (nreverse list)))))
+        finally (return (apply #'make-group (nreverse list)))))
+
+(defun read-selector ()
+  "Reads a complete selector and returns it."
+  (loop for next = (peek)
+        while next
+        do (when (char= next #\,)
+             (consume))
+        collect (read-group) into groups
+        finally (return (apply #'make-selector groups))))
 
 (defun %parse-selector (string)
   (setf string (concatenate 'string " " string))

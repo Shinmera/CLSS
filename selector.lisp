@@ -6,8 +6,11 @@
 
 (in-package #:org.tymoonnext.clss)
 
-(defun make-selector (&rest matches-and-ops)
-  `(:selector ,@matches-and-ops))
+(defun make-selector (&rest groups)
+  `(:selector ,@groups))
+
+(defun make-group (&rest matches-and-ops)
+  `(:group ,@matches-and-ops))
 
 (defun make-clss-matcher (&rest constraints)
   `(:matcher ,@constraints))
