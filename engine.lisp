@@ -173,7 +173,7 @@ Returns an array of matched nodes."
           do (setf nodes (match-pair combinator matcher nodes))
           finally (return nodes))))
 
-(declaim (ftype (function (T plump:node)
+(declaim (ftype (function (T (or plump:node vector list))
                           (values (and (vector plump:node) (not simple-array)) &optional))
                 %select select))
 (defun %select (selector root-node)
@@ -186,7 +186,7 @@ Returns an array of matched nodes."
 Returns an array of matched nodes.
 
 SELECTOR  --- A CSS-selector string or a compiled selector list.
-ROOT-NODE --- The root note to start matching from."
+ROOT-NODE --- A single node, list or vector of nodes to start matching from."
   (%select selector root-node))
 
 (define-compiler-macro select (selector root-node)
