@@ -212,6 +212,7 @@ ROOT-NODE --- A single node, list or vector of nodes to start matching from."
 (declaim (ftype (function (list plump:node) boolean) match-group-backwards))
 (defun match-group-backwards (group node)
   (declare (optimize (speed 3)))
+  (assert (eql (car group) :group) () 'selector-malformed)
   (let ((group (reverse (cdr group))))
     (when (match-matcher (pop group) node)
       (loop for combinator = (pop group)
@@ -244,10 +245,11 @@ ROOT-NODE --- A single node, list or vector of nodes to start matching from."
 (declaim (ftype (function (T plump:node) boolean) %node-matches-p node-matches-p))
 (defun %node-matches-p (selector node)
   (declare (optimize (speed 3)))
-  (let ((selector (cdr (etypecase selector
-                         (list selector)
-                         (string (parse-selector selector))))))
-    (loop for group in selector
+  (let ((selector (etypecase selector
+                    (list selector)
+                    (string (parse-selector selector)))))
+    (assert (eql (car selector) :selector) () 'selector-malformed)
+    (loop for group in (cdr selector)
           thereis (match-group-backwards group node))))
 
 (defun node-matches-p (selector node)
@@ -261,4 +263,4 @@ NODE     --- The node to test."
   (typecase selector
     (list `(%node-matches-p ',selector ,root-node))
     (string `(%node-matches-p ',(parse-selector selector) ,root-node))
-    (T `(%select ,selector ,root-node))))
+    (T `(%node-matches-p ,selector ,root-node))))
