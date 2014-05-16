@@ -22,7 +22,7 @@
 (define-matcher clss-name (or (is #\-) (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (is #\\) (is #\_) (is #\!)))
 (define-matcher combinator (any #\Space #\> #\+ #\~))
 (define-matcher attr-comparator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
-(defvar *valid-combinators* '(" "))
+(defvar *valid-combinators* " >+~")
 
 (defun read-name ()
   "Reads a CSS selector name-like string."
@@ -112,7 +112,7 @@
 (defun read-combinator ()
   "Reads the combinator between matchers and returns it."
   (let ((op (string-trim " " (consume-until (make-matcher (not :combinator))))))
-    (when (peek) (if (string= op "") " " op))))
+    (when (peek) (aref (if (string= op "") " " op) 0))))
 
 (defun read-selector ()
   "Reads a complete CSS selector and returns it."
@@ -120,7 +120,7 @@
         for combinator = (read-combinator)
         for matcher = (read-matcher)
         while combinator
-        do (unless (find combinator *valid-combinators* :test #'string-equal)
+        do (unless (find combinator *valid-combinators* :test #'char=)
              (error "Invalid combinator ~a." combinator))
            (push combinator list)
            (push matcher list)

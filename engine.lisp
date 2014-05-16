@@ -104,7 +104,7 @@ Returns T if all constraints match, NIL otherwise."
   (loop for constraint in (cdr matcher)
         always (match-constraint constraint node)))
 
-(declaim (ftype (function (simple-string list (and (vector plump:node) (not simple-array)))
+(declaim (ftype (function (character list (and (vector plump:node) (not simple-array)))
                           (values (and (vector plump:node) (not simple-array)) &optional)) match-pair))
 (defun match-pair (combinator matcher nodes)
   "Match a combinator and matcher pair against a list of nodes.
@@ -112,7 +112,7 @@ Returns a vector of matching nodes."
   (declare (optimize (speed 3)))
   (handler-case
       (let ((resultset (make-array (length nodes) :adjustable T :fill-pointer 0)))
-        (case (aref combinator 0)
+        (case combinator
           (#\Space
            (labels ((match-recursive (nodes)
                       (declare ((and (vector plump:node) (not simple-array)) nodes))
