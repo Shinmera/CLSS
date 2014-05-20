@@ -135,4 +135,4 @@
 ;;; Extra extensions specific to CLSS
 
 (define-pseudo-selector first-only (node)
-  (signal 'complete-match-pair :value (make-array 1 :initial-element node)))
+  (signal 'complete-match-pair :value (make-array 1 :initial-element node :adjustable T :fill-pointer T)))
