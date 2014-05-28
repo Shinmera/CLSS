@@ -21,7 +21,7 @@
 ;; ARGUMENTS     ::= #\( VALUE (#\, VALUE)* #\)
 
 (define-matcher clss-name (or (is #\-) (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (is #\\) (is #\_) (is #\!)))
-(define-matcher combinator (any #\Space #\> #\+ #\~))
+(define-matcher combinator (any #\Space #\Newline #\> #\+ #\~))
 (define-matcher grouper (is #\,))
 (define-matcher attr-comparator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
 (defvar *valid-combinators* " >+~")
@@ -116,7 +116,7 @@
   (let ((op (consume-until (make-matcher (not :combinator))))
         (next (peek)))
     (unless (or (not next) (char= next #\,))
-      (let ((op (string-trim " " op)))
+      (let ((op (string-trim '(#\Space #\Newline) op)))
         (if (string= op "")
             #\Space
             (aref op 0))))))
