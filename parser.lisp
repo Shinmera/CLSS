@@ -55,10 +55,10 @@
 (defun read-attribute-value ()
   "Reads an attribute value and returns it."
   (case (peek)
-    (#\"
+    ((#\" #\')
      (prog2
          (consume)
-         (consume-until (make-matcher (is #\")))
+         (consume-until (make-matcher (or (is #\") (is #\'))))
        (consume)))
     (T (consume-until (make-matcher (is #\]))))))
 
