@@ -73,7 +73,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
      (destructuring-bind (comparator attribute value) (cdr constraint)
        (declare ((and simple-string (not simple-base-string)) comparator attribute value))
        (let ((attr (attribute node attribute)))
-         (declare ((or null (and simple-string (not simple-base-string))) attr))
+         (declare ((or null (and string)) attr))
          (when attr
            (ecase (aref comparator 0)
              (#\=
