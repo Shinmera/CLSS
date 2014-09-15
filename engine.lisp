@@ -71,7 +71,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
      (not (null (attribute node (second constraint)))))
     (:c-attr-equals
      (destructuring-bind (comparator attribute value) (cdr constraint)
-       (declare ((and simple-string (not simple-base-string)) comparator attribute value))
+       (declare ((and simple-string) comparator attribute value))
        (let ((attr (attribute node attribute)))
          (declare ((or null (and string)) attr))
          (when attr
