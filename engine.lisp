@@ -184,7 +184,7 @@ Returns an array of matched nodes."
   (let ((selector (cdr selector)))
     (loop with result = (match-group (pop selector) root-node)
           for group in selector
-          do (plump::vector-append result (match-group group root-node))
+          do (array-utils:vector-append result (match-group group root-node))
           finally (return result))))
 
 (declaim (ftype (function (T (or plump:node vector list))

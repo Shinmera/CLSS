@@ -75,15 +75,15 @@
   "Reads an arguments list of a pseudo selector."
   (when (char= (or (peek) #\Space) #\()
     (consume)
-    (loop with index = plump::*index*
+    (loop with index = *index*
           with args = ()
           for char = (consume)
           until (or (not char) (char= char #\)))
           do (when (char= char #\,)
-               (push (string-trim " " (subseq plump::*string* index (1- plump::*index*))) args)
-               (setf index plump::*index*))
+               (push (string-trim " " (subseq *string* index (1- *index*))) args)
+               (setf index *index*))
           finally (progn
-                    (let ((arg (string-trim " " (subseq plump::*string* index (1- plump::*index*)))))
+                    (let ((arg (string-trim " " (subseq *string* index (1- *index*)))))
                       (unless (string= arg "")
                         (push arg args)))
                     (return (nreverse args))))))

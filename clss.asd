@@ -21,5 +21,6 @@
                (:file "parser")
                (:file "engine")
                (:file "pseudo-selectors"))
-  :depends-on (:plump
+  :depends-on (:array-utils
+               :plump
                :cl-ppcre))
