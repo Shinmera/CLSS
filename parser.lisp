@@ -149,16 +149,13 @@
         collect (read-group) into groups
         finally (return (apply #'make-selector groups))))
 
-(defun %parse-selector (string)
+(defun parse-selector (string)
+  "Parse a selector string into its \"compiled\" list form."
   (setf string (concatenate 'string " " string))
   (with-lexer-environment (string)
     (read-selector)))
 
-(defun parse-selector (string)
-  "Parse a selector string into its \"compiled\" list form."
-  (%parse-selector string))
-
-(define-compiler-macro parse-selector (string)
-  (if (stringp string)
-      (%parse-selector string)
-      `(%parse-selector ,string)))
+(defun ensure-selector (thing)
+  (etypecase thing
+    (list thing)
+    (string (parse-selector thing))))

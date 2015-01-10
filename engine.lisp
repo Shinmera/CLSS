@@ -215,27 +215,21 @@ Returns an array of matched nodes."
           do (array-utils:vector-append result (match-group group root-node))
           finally (return result))))
 
-(declaim (ftype (function (T (or plump:node vector list))
+(declaim (ftype (function (list (or plump:node vector list))
                           (values (and (vector plump:node) (not simple-array)) &optional))
-                %select select))
-(defun %select (selector root-node)
-  (match-selector (etypecase selector
-                    (list selector)
-                    (string (parse-selector selector))) root-node))
-
+                select))
 (defun select (selector root-node)
   "Match the given selector against the root-node and possibly all its children.
 Returns an array of matched nodes.
 
 SELECTOR  --- A CSS-selector string or a compiled selector list.
 ROOT-NODE --- A single node, list or vector of nodes to start matching from."
-  (%select selector root-node))
+  (match-selector (ensure-selector selector) root-node))
 
-(define-compiler-macro select (selector root-node)
-  (typecase selector
-    (list `(%select ',selector ,root-node))
-    (string `(%select ',(parse-selector selector) ,root-node))
-    (T `(%select ,selector ,root-node))))
+(define-compiler-macro select (&whole whole &environment env selector root-node)
+  (if (constantp selector env)
+      `(match-selector (load-time-value (ensure-selector ,selector)) ,root-node)
+      whole))
 
 (declaim (ftype (function (list plump:node) boolean) match-group-backwards))
 (defun match-group-backwards (group node)
@@ -269,25 +263,19 @@ ROOT-NODE --- A single node, list or vector of nodes to start matching from."
                         finally (return-from match-group-backwards NIL))))
             finally (return T)))))
 
-(declaim (ftype (function (T plump:node) boolean) %node-matches-p node-matches-p))
-(defun %node-matches-p (selector node)
-  (declare (optimize (speed 3)))
-  (let ((selector (etypecase selector
-                    (list selector)
-                    (string (parse-selector selector)))))
-    (assert (eql (car selector) :selector) () 'selector-malformed)
-    (loop for group in (cdr selector)
-          thereis (match-group-backwards group node))))
-
+(declaim (ftype (function (T plump:node) boolean) node-matches-p))
 (defun node-matches-p (selector node)
   "Tests whether the node matches the selector.
 
 SELECTOR --- A CSS-selector string or a compiled selector list.
 NODE     --- The node to test."
-  (%node-matches-p selector node))
+  (declare (optimize (speed 3)))
+  (let ((selector (ensure-selector selector)))
+    (assert (eql (car selector) :selector) () 'selector-malformed)
+    (loop for group in (cdr selector)
+          thereis (match-group-backwards group node))))
 
-(define-compiler-macro node-matches-p (selector root-node)
-  (typecase selector
-    (list `(%node-matches-p ',selector ,root-node))
-    (string `(%node-matches-p ',(parse-selector selector) ,root-node))
-    (T `(%node-matches-p ,selector ,root-node))))
+(define-compiler-macro node-matches-p (&whole whole &environment env selector root-node)
+  (if (constantp selector env)
+      `(node-matches-p (load-time-value (ensure-selector ,selector)) ,root-node)
+      whole))
