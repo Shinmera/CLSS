@@ -11,8 +11,8 @@
   (:shadow #:read-name #:read-attribute #:read-attribute-value)
   ;; engine.lisp
   (:export
-   #:*pseudo-selectors*
-   
+   #:pseudo-selector
+   #:remove-pseudo-selector
    #:define-pseudo-selector
    
    #:pseudo-selector-not-available
@@ -27,10 +27,12 @@
    #:match-constraint
    #:match-matcher
    #:match-pair
+   #:match-group
    #:match-selector
    
    #:select
 
+   #:match-group-backwards
    #:node-matches-p)
   ;; parser.lisp
   (:export
@@ -41,8 +43,8 @@
    #:make-clss-matcher
    #:make-any-constraint
    #:make-tag-constraint
+   #:make-type-constraint
    #:make-id-constraint
    #:make-class-constraint
    #:make-attribute-constraint
-   #:make-pseudo-constraint)
-  )
+   #:make-pseudo-constraint))

@@ -20,7 +20,7 @@
 ;; PSEUDO        ::= #\: NAME ARGUMENTS?
 ;; ARGUMENTS     ::= #\( VALUE (#\, VALUE)* #\)
 
-(define-matcher clss-name (or (is #\-) (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (is #\\) (is #\_) (is #\!)))
+(define-matcher clss-name (or (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (any #\- #\\ #\_ #\!)))
 (define-matcher combinator (any #\Space #\Newline #\> #\+ #\~))
 (define-matcher grouper (is #\,))
 (define-matcher attr-comparator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
@@ -28,11 +28,17 @@
 
 (defun read-name ()
   "Reads a CSS selector name-like string."
+  (unless (funcall (make-matcher :clss-name))
+    (error "~s at position ~d is not a valid name char." (peek) *index*))
   (consume-until (make-matcher (not :clss-name))))
 
 (defun read-any-constraint ()
   "Reads an any constraint and returns it."
   (make-any-constraint))
+
+(defun read-type-constraint ()
+  "Reads a DOM type constraint and returns it."
+  (make-type-constraint (read-name)))
 
 (defun read-tag-constraint ()
   "Reads a tag constraint and returns it."
@@ -100,6 +106,7 @@
     (#\. (read-class-constraint))
     (#\[ (read-attribute-constraint))
     (#\: (read-pseudo-constraint))
+    (#\^ (read-type-constraint))
     (T (unread) (read-tag-constraint))))
 
 (defun read-matcher ()

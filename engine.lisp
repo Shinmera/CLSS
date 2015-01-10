@@ -10,6 +10,19 @@
   "Hash table for pseudo selector functions.
 Links string names to functions of one or more arguments.")
 
+(defun pseudo-selector (name)
+  "Returns the pseudo-selector function associated with NAME, if any."
+  (gethash (string name) *pseudo-selectors*))
+
+(defun (setf pseudo-selector) (function name)
+  "Sets FUNCTION as the pseudo-selector for NAME."
+  (setf (gethash (string name) *pseudo-selectors*)
+        function))
+
+(defun remove-pseudo-selector (name)
+  "Removes the pseudo-selector associated with NAME."
+  (remhash (string name) *pseudo-selectors*))
+
 (defmacro define-pseudo-selector (name (nodename &rest args-lambda) &body body)
   "Define a new pseudo-selector of NAME.
 
@@ -18,7 +31,7 @@ NODENAME    --- A variable symbol the matched node is bound to.
 ARGS-LAMBDA --- A lambda-list of the expected arguments for the pseudo-selector.
                 Note that keyword arguments make no sense in this context.
 BODY        ::= form*"
-  `(setf (gethash ,(string name) *pseudo-selectors*)
+  `(setf (pseudo-selector ,(string name))
          #'(lambda (,nodename ,@args-lambda)
              (declare (ignorable ,nodename))
              ,@body)))
@@ -60,42 +73,51 @@ Returns NIL if it fails to do so, unspecified otherwise."
   (declare (optimize (speed 3)))
   (ecase (car constraint)
     (:c-any
-     T)
+     (and (not (text-node-p node))
+          (not (comment-p node))))
     (:c-tag
-     (string-equal (tag-name node) (second constraint)))
+     (and (element-p node)
+          (string-equal (tag-name node) (second constraint))))
+    (:c-type
+     (typep node (second constraint)))
     (:c-id
-     (string-equal (attribute node "id") (second constraint)))
+     (and (element-p node)
+          (string-equal (attribute node "id") (second constraint))))
     (:c-class
-     (not (null (member (second constraint) (cl-ppcre:split *whitespace-regex* (or (attribute node "class") "")) :test #'string-equal))))
+     (and (element-p node)
+          (not (null (member (second constraint) (cl-ppcre:split *whitespace-regex* (or (attribute node "class") "")) :test #'string-equal)))))
     (:c-attr-exists
-     (not (null (attribute node (second constraint)))))
+     (and (element-p node)
+          (not (null (attribute node (second constraint))))))
     (:c-attr-equals
-     (destructuring-bind (comparator attribute value) (cdr constraint)
-       (declare ((and simple-string) comparator attribute value))
-       (let ((attr (attribute node attribute)))
-         (declare ((or null (and string)) attr))
-         (when attr
-           (ecase (aref comparator 0)
-             (#\=
-              (string-equal attr value))
-             (#\~
-              (not (null (member value (cl-ppcre:split *whitespace-regex* attr) :test #'string-equal))))
-             (#\^
-              (and (<= (length value) (length attr))
-                       (string= value attr :end2 (length value))))
-             (#\$
-              (and (<= (length value) (length attr))
-                       (string= value attr :start2 (- (length attr) (length value)))))
-             (#\*
-              (not (null (search value attr))))
-             (#\|
-              (not (null (member value (cl-ppcre:split *hyphen-regex* attr) :test #'string-equal)))))))))
+     (and (element-p node)
+          (destructuring-bind (comparator attribute value) (cdr constraint)
+            (declare ((and simple-string) comparator attribute value))
+            (let ((attr (attribute node attribute)))
+              (declare ((or null (and string)) attr))
+              (when attr
+                (ecase (aref comparator 0)
+                  (#\=
+                   (string-equal attr value))
+                  (#\~
+                   (not (null (member value (cl-ppcre:split *whitespace-regex* attr) :test #'string-equal))))
+                  (#\^
+                   (and (<= (length value) (length attr))
+                        (string= value attr :end2 (length value))))
+                  (#\$
+                   (and (<= (length value) (length attr))
+                        (string= value attr :start2 (- (length attr) (length value)))))
+                  (#\*
+                   (not (null (search value attr))))
+                  (#\|
+                   (not (null (member value (cl-ppcre:split *hyphen-regex* attr) :test #'string-equal))))))))))
     (:c-pseudo
-     (destructuring-bind (name &rest args) (cdr constraint)
-       (let ((pseudo (gethash name *pseudo-selectors*)))
-         (declare (function pseudo))
-         (assert (not (null pseudo)) () 'undefined-pseudo-selector :name name)
-         (not (null (apply pseudo node args))))))))
+     (and (element-p node)
+          (destructuring-bind (name &rest args) (cdr constraint)
+            (let ((pseudo (pseudo-selector name)))
+              (declare (function pseudo))
+              (assert (not (null pseudo)) () 'undefined-pseudo-selector :name name)
+              (not (null (apply pseudo node args)))))))))
 
 (declaim (ftype (function (list plump:node)
                           (values boolean))
@@ -121,35 +143,41 @@ Returns a vector of matching nodes."
            (labels ((match-recursive (nodes)
                       (declare ((and (vector plump:node) (not simple-array)) nodes))
                       (loop for node across nodes
-                            when (and (element-p node)
-                                      (match-matcher matcher node))
-                              do (vector-push-extend node resultset)
+                            when (match-matcher matcher node)
+                            do (vector-push-extend node resultset)
                             when (nesting-node-p node)
-                              do (match-recursive (children node)))))
+                            do (match-recursive (children node)))))
              (loop for node across nodes
                    do (match-recursive (children node)))))
           (#\>
            (loop for parent across nodes
                  do (loop for node across (the (and (vector plump:node) (not simple-array))
                                                (children parent))
-                          when (and (element-p node)
-                                    (match-matcher matcher node))
-                            do (vector-push-extend node resultset))))
+                          when (match-matcher matcher node)
+                          do (vector-push-extend node resultset))))
           (#\+
            (loop for node across nodes
-                 for sibling = (next-element node)
-                 when (and sibling (match-matcher matcher sibling))
-                   do (vector-push-extend sibling resultset)))
+                 for position of-type fixnum = (child-position node)
+                 for family = (family node)
+                 do (loop for i of-type fixnum from position below (1- (fill-pointer family))
+                          for sibling = (aref family (1+ i))
+                          ;; This is gross. In order to properly support
+                          ;; edge cases like a foo+^bar we cannot exclude
+                          ;; anything other than these two...
+                          do (when (and (not (text-node-p node))
+                                        (not (comment-p node)))
+                               (when (match-matcher matcher sibling)
+                                 (vector-push-extend sibling resultset))
+                               (return)))))
           (#\~
            (loop for node across nodes
-                 for position = (child-position node)
-                 for family = (the (and (vector plump:node) (not simple-array))
-                                   (family node))
-                 do (loop for i of-type fixnum from position below (length family)
-                          for sibling = (elt family i)
-                          when (and (element-p sibling)
-                                    (match-matcher matcher sibling))
-                            do (vector-push-extend sibling resultset)))))
+                 for position of-type fixnum = (child-position node)
+                 for family = (family node)
+                 do (loop for i of-type fixnum from position below (fill-pointer family)
+                          for sibling = (aref family i)
+                          do (when (match-matcher matcher sibling)
+                               (vector-push-extend sibling resultset)
+                               (return))))))
         resultset)
     (complete-match-pair (o)
       (return-from match-pair (value o)))))
@@ -235,8 +263,7 @@ ROOT-NODE --- A single node, list or vector of nodes to start matching from."
                  (#\~
                   (loop for i of-type fixnum downfrom (child-position node) above 0
                         for sibling = (aref (family node) i)
-                        do (when (and (element-p sibling)
-                                      (match-matcher matcher sibling))
+                        do (when (match-matcher matcher sibling)
                              (setf node sibling)
                              (return))
                         finally (return-from match-group-backwards NIL))))

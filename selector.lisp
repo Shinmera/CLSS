@@ -21,6 +21,14 @@
 (defun make-tag-constraint (tag)
   `(:c-tag ,tag))
 
+(defun make-type-constraint (name)
+  (let ((type (or (find-symbol (string-upcase name) "PLUMP-DOM")
+                  (find-symbol (string-upcase name))
+                  (error "No such PLUMP-DOM class: ~s" name))))
+    (or (subtypep type 'plump-dom:node)
+        (error "~s is not a PLUMP-DOM:NODE subclass." name))
+    `(:c-type ,type)))
+
 (defun make-id-constraint (id)
   `(:c-id ,id))
 
