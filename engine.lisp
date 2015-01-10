@@ -215,7 +215,7 @@ Returns an array of matched nodes."
           do (array-utils:vector-append result (match-group group root-node))
           finally (return result))))
 
-(declaim (ftype (function (list (or plump:node vector list))
+(declaim (ftype (function ((or string list) (or plump:node vector list))
                           (values (and (vector plump:node) (not simple-array)) &optional))
                 select))
 (defun select (selector root-node)
