@@ -4,7 +4,7 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(in-package #:org.tymoonnext.clss)
+(in-package #:org.shirakumo.clss)
 
 (defvar *pseudo-selectors* (make-hash-table :test 'equalp)
   "Hash table for pseudo selector functions.

@@ -6,7 +6,7 @@
 
 (in-package #:cl)
 (defpackage #:CLSS
-  (:nicknames #:org.tymoonnext.clss)
+  (:nicknames #:org.shirakumo.clss)
   (:use #:cl #:plump)
   (:shadow #:read-name #:read-attribute #:read-attribute-value)
   ;; engine.lisp

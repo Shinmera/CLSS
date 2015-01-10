@@ -4,13 +4,10 @@
  Author: Nicolas Hafner <shinmera@tymoon.eu>
 |#
 
-(defpackage #:org.tymoonnext.clss.asdf
-  (:use #:cl #:asdf))
-(in-package #:org.tymoonnext.clss.asdf)
-
-(defsystem clss
+(in-package #:cl-user)
+(asdf:defsystem clss
   :name "CSS Like Simple Selectors"
-  :version "0.2.1"
+  :version "0.3.1"
   :license "Artistic"
   :author "Nicolas Hafner <shinmera@tymoon.eu>"
   :maintainer "Nicolas Hafner <shinmera@tymoon.eu>"
