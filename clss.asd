@@ -19,5 +19,4 @@
                (:file "engine")
                (:file "pseudo-selectors"))
   :depends-on (:array-utils
-               :plump
-               :cl-ppcre))
+               :plump))

@@ -99,8 +99,10 @@
   (error 'pseudo-selector-not-available :name "TARGET"))
 
 (define-pseudo-selector lang (node language)
-  (or (cl-ppcre:scan (format NIL "(^|-)~a(-|$)" language) (attribute node "lang"))
-      (cl-ppcre:scan (format NIL "(^|-)~a(-|$)" language) (attribute node "xml:lang"))))
+  (let ((languages (or (attribute node "lang")
+                       (attribute node "xml:lang"))))
+    (when languages
+      (find language (split #\- languages) :test #'string=))))
 
 (define-pseudo-selector enabled (node)
   (has-attribute node "enabled"))
@@ -123,11 +125,10 @@
 (define-pseudo-selector after (node)
   (error 'pseudo-selector-not-available :name "AFTER"))
 
-(defvar *warning-regex* (cl-ppcre:create-scanner "\\bwarning\\b"))
 (define-pseudo-selector warning (node)
   (let ((classes (attribute node "class")))
     (when classes
-      (cl-ppcre:scan *warning-regex* classes))))
+      (find "warning" (split #\Space classes) :test #'string=))))
 
 (define-pseudo-selector not (node selector)
   (not (match-matcher (third (parse-selector selector)) node)))

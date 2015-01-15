@@ -61,8 +61,26 @@ for the selector to the matcher."))
   ((%value :initarg :value :initform NIL :accessor value))
   (:documentation "Condition signalled to immediately return from MATCH-PAIR."))
 
-(defvar *whitespace-regex* (cl-ppcre:create-scanner "\\s+"))
-(defvar *hyphen-regex* (cl-ppcre:create-scanner "-"))
+(defun split (split string)
+  (declare (optimize (speed 3)))
+  (macrolet ((body ()
+               `(loop with i = 0 and length = (length string)
+                      while (< i length)
+                      for item = (with-output-to-string (output)
+                                   (loop while (< i length)
+                                         for char = (aref string i)
+                                         do (cond ((char= char split)
+                                                   (loop while (and (< i length)
+                                                                    (char= (aref string i) split))
+                                                         do (incf i))
+                                                   (return))
+                                                  (T (write-char char output)
+                                                     (incf i)))))
+                      unless (string= item "")
+                      collect item)))
+    (typecase string
+      (simple-string (body))
+      (string (body)))))
 
 (declaim (ftype (function (list plump-dom:node)
                           (values boolean))
@@ -85,7 +103,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
           (string-equal (attribute node "id") (second constraint))))
     (:c-class
      (and (element-p node)
-          (not (null (member (second constraint) (cl-ppcre:split *whitespace-regex* (or (attribute node "class") "")) :test #'string-equal)))))
+          (not (null (member (second constraint) (split #\Space (or (attribute node "class") "")) :test #'string-equal)))))
     (:c-attr-exists
      (and (element-p node)
           (not (null (attribute node (second constraint))))))
@@ -100,7 +118,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
                   (#\=
                    (string-equal attr value))
                   (#\~
-                   (not (null (member value (cl-ppcre:split *whitespace-regex* attr) :test #'string-equal))))
+                   (not (null (member value (split #\Space attr) :test #'string-equal))))
                   (#\^
                    (and (<= (length value) (length attr))
                         (string= value attr :end2 (length value))))
@@ -110,7 +128,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
                   (#\*
                    (not (null (search value attr))))
                   (#\|
-                   (not (null (member value (cl-ppcre:split *hyphen-regex* attr) :test #'string-equal))))))))))
+                   (not (null (member value (split #\- attr) :test #'string-equal))))))))))
     (:c-pseudo
      (and (element-p node)
           (destructuring-bind (name &rest args) (cdr constraint)
