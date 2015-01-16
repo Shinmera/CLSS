@@ -112,8 +112,9 @@
 (defun read-matcher ()
   "Read a matcher (a sequence of constraints) and return it."
   (loop for peek = (peek)
-        for constraint = (and peek (read-constraint))
-        while (and peek (funcall (make-matcher (not (or :combinator :grouper)))))
+        for loop-cond = (and peek (funcall (make-matcher (not (or :combinator :grouper)))))
+        for constraint = (and loop-cond (read-constraint))
+        while loop-cond
         when constraint
           collect constraint into constraints
         finally (return (apply #'make-clss-matcher constraints))))
