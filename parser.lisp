@@ -21,6 +21,7 @@
 ;; ARGUMENTS     ::= #\( VALUE (#\, VALUE)* #\)
 
 (define-matcher clss-name (or (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (any #\- #\\ #\_ #\!)))
+(define-matcher clss-tag-name (or :clss-name (and (is #\:) (next (is #\:))) (and (is #\:) (prev (is #\:)))))
 (define-matcher combinator (any #\Space #\Newline #\> #\+ #\~))
 (define-matcher grouper (is #\,))
 (define-matcher attr-comparator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
@@ -42,7 +43,15 @@
 
 (defun read-tag-constraint ()
   "Reads a tag constraint and returns it."
-  (make-tag-constraint (read-name)))
+  (make-tag-constraint
+   (with-output-to-string (out)
+     (loop with matcher = (make-matcher :clss-tag-name)
+           for prev = #\  then char
+           for char = (peek)
+           while (funcall matcher)
+           do (unless (and (eql char #\:) (eql prev #\:))
+                (write-char char out))
+              (advance)))))
 
 (defun read-id-constraint ()
   "Reads an ID attribute constraint and returns it."
