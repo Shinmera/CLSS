@@ -17,7 +17,9 @@ As Plump supports XML as well as HTML, it also includes special handling for a f
 
     (clss:select "^CDATA" (plump:parse "<foo><![CDATA[bar]]></foo>"))
 
-CLSS attempts to be a fast engine and various parts of it have been tuned for this purpose, which limits the extensibility of CLSS a bit. However, it is still possible to f.e. programmatically construct a selector 
+CSS selectors in themselves also don't support XML namespaces due to the ambiguity arising with pseudo-selectors. CLSS solves this by interpreting a double colon as a name. Thus, a tag with the name of `foo:bar` is selected by `foo::bar`.
+
+CLSS attempts to be a fast engine and various parts of it have been tuned for this purpose, which limits the extensibility of CLSS a bit. However, it is still possible to f.e. programmatically construct a selector.
 
 Extending CLSS
 --------------
@@ -28,4 +30,3 @@ Using `define-pseudo-selector` you can add your own extensions to CLSS:
         (and href (cl-ppcre:scan "^(http|https)://" href))))
 
     (clss:select "a:outside-link" (plump:parse "<foo><a href=\"/baloney\"/><a href=\"http://example.com\"/></foo>"))
-
