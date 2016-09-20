@@ -1,455 +1,106 @@
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta charset="utf-8"/>
-    <title>CLSS</title>
-    <style type="text/css">
-      html{font-family: serif;}
-      code a{text-decoration: none;}
-      h1{display: inline-block; margin-bottom: 0;}
-      code{font-family: monospace;}
-      h4{display: inline-block; margin: 0; padding: 0;}
-      #symbol-index ul{list-style: none;}
-      .package li{margin-bottom: 20px;}
-      .package pre{margin: 0 0 0 10px; white-space: pre-wrap;}
-      .package .nicknames{font-weight: normal;}
-      table{margin: 20px;}
-      td{padding-bottom: 10px;}
-    </style>
-  </head>
-  <body>
-    <header>
-      <h1><img src="clss-logo.png" alt="clss"/></h1>
-      <span>0.3.1</span>
-      <p>A DOM tree searching engine based on CSS selectors.</p>
-    </header>
-    <div id="content">
-      <article>
-        <c:documentate>
-          <span><h2>About CLSS</h2>
+<!DOCTYPE html> <html xmlns="http://www.w3.org/1999/xhtml"> <head> <meta charset="utf-8"/> <title>Clss</title> <meta name="viewport" content="width=device-width"/> <meta name="description" content="A DOM tree searching engine based on CSS selectors."/> <meta name="author" content="Nicolas Hafner &lt;shinmera@tymoon.eu&gt;"/> <style type="text/css"> body{
+          max-width: 1024px;
+          margin: 0 auto 0 auto;
+          font-family: sans-serif;
+          color: #333333;
+          font-size: 14pt;
+          padding: 5px;
+      }
 
-<p>CLSS is a DOM traversal engine based on CSS selectors. It makes use of the <a href="https://shinmera.github.io/plump/">Plump-DOM</a> and is used by <a href="https://shinmera.github.io/lquery/">lQuery</a>.</p>
+      body>header{
+          display:flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+          max-width: 100%;
+      }
 
-<h2>How To</h2>
+      img{
+          max-width: 100%;
+          max-height: 100%;
+      }
 
-<p>Load CLSS through Quicklisp or ASDF:</p>
+      code{
+          font-family: Consolas, Inconsolata, monospace;
+      }
 
-<pre><code>(ql:quickload :clss)
-</code></pre>
+      a{
+          text-decoration: none;
+          color: #0055AA;
+      }
 
-<p>Using a standard CSS selector you can retrieve a vector of nodes from the DOM:</p>
+      #documentation{
+          text-align: justify;
+      }
 
-<pre><code>(<a href="#CLSS:SELECT">clss:select</a> &quot;img&quot; (plump:parse &quot;&lt;div&gt;&lt;p&gt;A beautiful image: &lt;img src=&quot;//example.com/image.png&quot; alt=&quot;image&quot; /&gt;&lt;/p&gt;&lt;/div&gt;&quot;))
-</code></pre>
+      #documentation pre{
+          margin-left: 20px;
+      }
 
-<p>CLSS implements <a href="http://www.w3.org/TR/css3-selectors/">Level 3 selectors</a> and offers most of the features from the spec. Some things were left out as they make no sense outside a CSS context.
-As Plump supports XML as well as HTML, it also includes special handling for a few nodes that are not elements and are thus not reachable by standard CSS selectors. In order to solve this problem, CLSS adds an extra operator, the <code>^</code> caret. The caret is followed by a Plump-DOM class-name and will then match any elements that conform to a <code><a href="http://l1sp.org/cl/typep">typep</a></code> test against it.</p>
+      #symbol-index>ul{
+          list-style: none;
+          padding: 0;
+      }
+      #symbol-index .package>ul{
+          list-style: none;
+          padding: 0 0 0 10px;
+      }
+      #symbol-index .package .nicknames{
+          font-weight: normal;
+      }
+      #symbol-index .package h4{
+          display: inline-block;
+          margin: 0;
+      }
+      #symbol-index .package article{
+          margin: 0 0 15px 0;
+      }
+      #symbol-index .package article header{
+          font-size: 1.2em;
+          font-weight: normal;
+      }
+      #symbol-index .package .name{
+          margin-right: 5px;
+      }
+      #symbol-index .package .docstring{
+          margin: 0 0 0 15px;
+          white-space: pre-wrap;
+          font-size: 12pt;
+      }
 
-<pre><code>(<a href="#CLSS:SELECT">clss:select</a> &quot;^CDATA&quot; (plump:parse &quot;&lt;foo&gt;&lt;![CDATA[bar]]&gt;&lt;/foo&gt;&quot;))
-</code></pre>
-
-<p>CSS selectors in themselves also don't support XML namespaces due to the ambiguity arising with pseudo-selectors. CLSS solves this by interpreting a double colon as a name. Thus, a tag with the name of <code>foo:bar</code> is selected by <code>foo::bar</code>.</p>
-
-<p>CLSS attempts to be a fast engine and various parts of it have been tuned for this purpose, which limits the extensibility of CLSS a bit. However, it is still possible to f.e. programmatically construct a selector.</p>
-
-<h2>Extending CLSS</h2>
-
-<p>Using <code><a href="#CLSS:DEFINE-PSEUDO-SELECTOR">define-pseudo-selector</a></code> you can add your own extensions to CLSS:</p>
-
-<pre><code>(<a href="#CLSS:DEFINE-PSEUDO-SELECTOR">clss:define-pseudo-selector</a> outside-link (node)
+      @media (max-width: 800px){
+          body{font-size: 12pt;}
+      } </style> </head> <body> <header> <h1><img alt="clss" src="clss-logo.png"/></h1> <span class="version">0.3.1</span> <p class="description">A DOM tree searching engine based on CSS selectors.</p> </header> <main> <article id="documentation">  <div><h2>About CLSS</h2> <p>CLSS is a DOM traversal engine based on CSS selectors. It makes use of the <a href="https://shinmera.github.io/plump/">Plump-DOM</a> and is used by <a href="https://shinmera.github.io/lquery/">lQuery</a>.</p> <h2>How To</h2> <p>Load CLSS through Quicklisp or ASDF:</p> <pre><code>(ql:quickload :clss)
+</code></pre> <p>Using a standard CSS selector you can retrieve a vector of nodes from the DOM:</p> <pre><code>(<a href="#CLSS:SELECT">clss:select</a> &quot;img&quot; (plump:parse &quot;&lt;div&gt;&lt;p&gt;A beautiful image: &lt;img src=&quot;//example.com/image.png&quot; alt=&quot;image&quot; /&gt;&lt;/p&gt;&lt;/div&gt;&quot;))
+</code></pre> <p>CLSS implements <a href="http://www.w3.org/TR/css3-selectors/">Level 3 selectors</a> and offers most of the features from the spec. Some things were left out as they make no sense outside a CSS context.
+As Plump supports XML as well as HTML, it also includes special handling for a few nodes that are not elements and are thus not reachable by standard CSS selectors. In order to solve this problem, CLSS adds an extra operator, the <code>^</code> caret. The caret is followed by a Plump-DOM class-name and will then match any elements that conform to a <code><a href="http://l1sp.org/cl/typep">typep</a></code> test against it.</p> <pre><code>(<a href="#CLSS:SELECT">clss:select</a> &quot;^CDATA&quot; (plump:parse &quot;&lt;foo&gt;&lt;![CDATA[bar]]&gt;&lt;/foo&gt;&quot;))
+</code></pre> <p>CSS selectors in themselves also don't support XML namespaces due to the ambiguity arising with pseudo-selectors. CLSS solves this by interpreting a double colon as a name. Thus, a tag with the name of <code>foo:bar</code> is selected by <code>foo::bar</code>.</p> <p>CLSS attempts to be a fast engine and various parts of it have been tuned for this purpose, which limits the extensibility of CLSS a bit. However, it is still possible to f.e. programmatically construct a selector.</p> <h2>Extending CLSS</h2> <p>Using <code><a href="#CLSS:DEFINE-PSEUDO-SELECTOR">define-pseudo-selector</a></code> you can add your own extensions to CLSS:</p> <pre><code>(<a href="#CLSS:DEFINE-PSEUDO-SELECTOR">clss:define-pseudo-selector</a> outside-link (node)
   (<a href="http://l1sp.org/cl/let">let</a> ((href (plump:attribute node &quot;href&quot;)))
     (<a href="http://l1sp.org/cl/and">and</a> href (cl-ppcre:scan &quot;^(http|https)://&quot; href))))
 
 (<a href="#CLSS:SELECT">clss:select</a> &quot;a:outside-link&quot; (plump:parse &quot;&lt;foo&gt;&lt;a href=\&quot;/baloney\&quot;/&gt;&lt;a href=\&quot;http://example.com\&quot;/&gt;&lt;/foo&gt;&quot;))
-</code></pre>
-</span>
-        </c:documentate>
-      </article>
-      <article>
-        
-          <h2>Copyright</h2>
-          <span>clss</span> is licensed under the <span><a href="https://tldrlegal.com/search?q=Artistic">Artistic</a></span> license.
-          
-            © <span>Nicolas Hafner &lt;shinmera@tymoon.eu&gt;</span>
-            .
-          
-          
-        
-      </article>
-      
-        <article id="symbol-index">
-          <h2>Package Index</h2>
-          <ul><li class="package">
-              <h3>
-                <a name="CLSS" href="#CLSS">CLSS</a>
-                <span class="nicknames">(ORG.SHIRAKUMO.CLSS)</span>
-              </h3>
-              <ul><li>
-                  <a name="CLSS:PSEUDO-SELECTOR-NOT-AVAILABLE"/>
-                  <article>
-                    <header class="condition">
-                      <span class="type">condition</span>
-                      <code>
-                        <h4><a href="#CLSS:PSEUDO-SELECTOR-NOT-AVAILABLE" class="name">PSEUDO-SELECTOR-NOT-AVAILABLE</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">()</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Condition signalled when a pseudo selector is defined according to spec, 
+</code></pre> </div>  </article> <article id="copyright">  <h2>Copyright</h2> <span>clss</span> is licensed under the <span><a href="https://tldrlegal.com/search?q=Artistic">Artistic</a></span> license.  © <span>Nicolas Hafner &lt;shinmera@tymoon.eu&gt;</span> .    </article>  <article id="symbol-index"> <h2>Package Index</h2> <ul><li class="package"> <h3> <a name="CLSS" href="#CLSS">CLSS</a> <span class="nicknames">(ORG.SHIRAKUMO.CLSS)</span> </h3> <ul><li> <a name="CLSS:PSEUDO-SELECTOR-NOT-AVAILABLE"> </a> <article> <header class="condition"> <span class="type">condition</span>  <h4 class="name"><code><a href="#CLSS:PSEUDO-SELECTOR-NOT-AVAILABLE">PSEUDO-SELECTOR-NOT-AVAILABLE</a></code></h4>  </header> <pre class="docstring">Condition signalled when a pseudo selector is defined according to spec, 
 but makes no sense in the context of CLSS and has thus been left
-unimplemented.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:SELECTOR-MALFORMED"/>
-                  <article>
-                    <header class="condition">
-                      <span class="type">condition</span>
-                      <code>
-                        <h4><a href="#CLSS:SELECTOR-MALFORMED" class="name">SELECTOR-MALFORMED</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">()</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Signalled when a selector or matcher has been found to be malformed.
+unimplemented.</pre> </article> </li><li> <a name="CLSS:SELECTOR-MALFORMED"> </a> <article> <header class="condition"> <span class="type">condition</span>  <h4 class="name"><code><a href="#CLSS:SELECTOR-MALFORMED">SELECTOR-MALFORMED</a></code></h4>  </header> <pre class="docstring">Signalled when a selector or matcher has been found to be malformed.
 This really shouldn't happen unless you're passing raw lists
-for the selector to the matcher.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:UNDEFINED-PSEUDO-SELECTOR"/>
-                  <article>
-                    <header class="condition">
-                      <span class="type">condition</span>
-                      <code>
-                        <h4><a href="#CLSS:UNDEFINED-PSEUDO-SELECTOR" class="name">UNDEFINED-PSEUDO-SELECTOR</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">()</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Condition signalled when trying to use a pseudo selector that has not
+for the selector to the matcher.</pre> </article> </li><li> <a name="CLSS:UNDEFINED-PSEUDO-SELECTOR"> </a> <article> <header class="condition"> <span class="type">condition</span>  <h4 class="name"><code><a href="#CLSS:UNDEFINED-PSEUDO-SELECTOR">UNDEFINED-PSEUDO-SELECTOR</a></code></h4>  </header> <pre class="docstring">Condition signalled when trying to use a pseudo selector that has not
 been defined. This is signalled at match-time, rather than at
-selector-compile-time.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:NAME"/>
-                  <article>
-                    <header class="accessor">
-                      <span class="type">accessor</span>
-                      <code>
-                        <h4><a href="#CLSS:NAME" class="name">NAME</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(CONDITION)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring"/>
-                  </article>
-                </li><li>
-                  <a name="CLSS:PSEUDO-SELECTOR"/>
-                  <article>
-                    <header class="accessor">
-                      <span class="type">accessor</span>
-                      <code>
-                        <h4><a href="#CLSS:PSEUDO-SELECTOR" class="name">PSEUDO-SELECTOR</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(NAME)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Returns the pseudo-selector function associated with NAME, if any.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:SELECTOR"/>
-                  <article>
-                    <header class="accessor">
-                      <span class="type">accessor</span>
-                      <code>
-                        <h4><a href="#CLSS:SELECTOR" class="name">SELECTOR</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(CONDITION)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring"/>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MAKE-ANY-CONSTRAINT"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MAKE-ANY-CONSTRAINT" class="name">MAKE-ANY-CONSTRAINT</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">()</span>
-                      </code>
-                    </header>
-                    <pre class="docstring"/>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MAKE-ATTRIBUTE-CONSTRAINT"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MAKE-ATTRIBUTE-CONSTRAINT" class="name">MAKE-ATTRIBUTE-CONSTRAINT</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(ATTRIBUTE &amp;OPTIONAL VALUE (COMPARATOR :=))</span>
-                      </code>
-                    </header>
-                    <pre class="docstring"/>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MAKE-CLASS-CONSTRAINT"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MAKE-CLASS-CONSTRAINT" class="name">MAKE-CLASS-CONSTRAINT</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(CLASS)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring"/>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MAKE-CLSS-MATCHER"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MAKE-CLSS-MATCHER" class="name">MAKE-CLSS-MATCHER</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(&amp;REST CONSTRAINTS)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring"/>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MAKE-ID-CONSTRAINT"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MAKE-ID-CONSTRAINT" class="name">MAKE-ID-CONSTRAINT</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(ID)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring"/>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MAKE-PSEUDO-CONSTRAINT"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MAKE-PSEUDO-CONSTRAINT" class="name">MAKE-PSEUDO-CONSTRAINT</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(FUNCTION &amp;REST ARGS)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring"/>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MAKE-SELECTOR"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MAKE-SELECTOR" class="name">MAKE-SELECTOR</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(&amp;REST GROUPS)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring"/>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MAKE-TAG-CONSTRAINT"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MAKE-TAG-CONSTRAINT" class="name">MAKE-TAG-CONSTRAINT</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(TAG)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring"/>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MAKE-TYPE-CONSTRAINT"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MAKE-TYPE-CONSTRAINT" class="name">MAKE-TYPE-CONSTRAINT</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(NAME)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring"/>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MATCH-CONSTRAINT"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MATCH-CONSTRAINT" class="name">MATCH-CONSTRAINT</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(CONSTRAINT NODE)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Attempts to match the CONSTRAINT form against the node.
-Returns NIL if it fails to do so, unspecified otherwise.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MATCH-GROUP"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MATCH-GROUP" class="name">MATCH-GROUP</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(GROUP ROOT-NODE)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Match a matcher group against the root-node and possibly all its children.
-Returns an array of mached nodes.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MATCH-GROUP-BACKWARDS"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MATCH-GROUP-BACKWARDS" class="name">MATCH-GROUP-BACKWARDS</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(GROUP NODE)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring"/>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MATCH-MATCHER"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MATCH-MATCHER" class="name">MATCH-MATCHER</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(MATCHER NODE)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Attempts to match a matcher against a node.
-Returns T if all constraints match, NIL otherwise.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MATCH-PAIR"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MATCH-PAIR" class="name">MATCH-PAIR</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(COMBINATOR MATCHER NODES)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Match a combinator and matcher pair against a list of nodes.
-Returns a vector of matching nodes.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:MATCH-SELECTOR"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:MATCH-SELECTOR" class="name">MATCH-SELECTOR</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(SELECTOR ROOT-NODE)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Match a selector against the root-node and possibly all its children.
-Returns an array of matched nodes.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:NODE-MATCHES-P"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:NODE-MATCHES-P" class="name">NODE-MATCHES-P</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(SELECTOR NODE)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Tests whether the node matches the selector.
+selector-compile-time.</pre> </article> </li><li> <a name="CLSS:NAME"> </a> <article> <header class="accessor"> <span class="type">accessor</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:NAME">NAME</a></code></h4> <code class="qualifiers"></code> <code class="arguments">CONDITION</code><code>)</code>  </header> <pre class="docstring"/> </article> </li><li> <a name="CLSS:PSEUDO-SELECTOR"> </a> <article> <header class="accessor"> <span class="type">accessor</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:PSEUDO-SELECTOR">PSEUDO-SELECTOR</a></code></h4> <code class="qualifiers"></code> <code class="arguments">NAME</code><code>)</code>  </header> <pre class="docstring">Returns the pseudo-selector function associated with NAME, if any.</pre> </article> </li><li> <a name="CLSS:SELECTOR"> </a> <article> <header class="accessor"> <span class="type">accessor</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:SELECTOR">SELECTOR</a></code></h4> <code class="qualifiers"></code> <code class="arguments">CONDITION</code><code>)</code>  </header> <pre class="docstring"/> </article> </li><li> <a name="CLSS:MAKE-ANY-CONSTRAINT"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MAKE-ANY-CONSTRAINT">MAKE-ANY-CONSTRAINT</a></code></h4> <code class="qualifiers"></code> <code class="arguments"></code><code>)</code>  </header> <pre class="docstring"/> </article> </li><li> <a name="CLSS:MAKE-ATTRIBUTE-CONSTRAINT"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MAKE-ATTRIBUTE-CONSTRAINT">MAKE-ATTRIBUTE-CONSTRAINT</a></code></h4> <code class="qualifiers"></code> <code class="arguments">ATTRIBUTE &amp;OPTIONAL VALUE (COMPARATOR :=)</code><code>)</code>  </header> <pre class="docstring"/> </article> </li><li> <a name="CLSS:MAKE-CLASS-CONSTRAINT"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MAKE-CLASS-CONSTRAINT">MAKE-CLASS-CONSTRAINT</a></code></h4> <code class="qualifiers"></code> <code class="arguments">CLASS</code><code>)</code>  </header> <pre class="docstring"/> </article> </li><li> <a name="CLSS:MAKE-CLSS-MATCHER"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MAKE-CLSS-MATCHER">MAKE-CLSS-MATCHER</a></code></h4> <code class="qualifiers"></code> <code class="arguments">&amp;REST CONSTRAINTS</code><code>)</code>  </header> <pre class="docstring"/> </article> </li><li> <a name="CLSS:MAKE-ID-CONSTRAINT"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MAKE-ID-CONSTRAINT">MAKE-ID-CONSTRAINT</a></code></h4> <code class="qualifiers"></code> <code class="arguments">ID</code><code>)</code>  </header> <pre class="docstring"/> </article> </li><li> <a name="CLSS:MAKE-PSEUDO-CONSTRAINT"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MAKE-PSEUDO-CONSTRAINT">MAKE-PSEUDO-CONSTRAINT</a></code></h4> <code class="qualifiers"></code> <code class="arguments">FUNCTION &amp;REST ARGS</code><code>)</code>  </header> <pre class="docstring"/> </article> </li><li> <a name="CLSS:MAKE-SELECTOR"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MAKE-SELECTOR">MAKE-SELECTOR</a></code></h4> <code class="qualifiers"></code> <code class="arguments">&amp;REST GROUPS</code><code>)</code>  </header> <pre class="docstring"/> </article> </li><li> <a name="CLSS:MAKE-TAG-CONSTRAINT"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MAKE-TAG-CONSTRAINT">MAKE-TAG-CONSTRAINT</a></code></h4> <code class="qualifiers"></code> <code class="arguments">TAG</code><code>)</code>  </header> <pre class="docstring"/> </article> </li><li> <a name="CLSS:MAKE-TYPE-CONSTRAINT"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MAKE-TYPE-CONSTRAINT">MAKE-TYPE-CONSTRAINT</a></code></h4> <code class="qualifiers"></code> <code class="arguments">NAME</code><code>)</code>  </header> <pre class="docstring"/> </article> </li><li> <a name="CLSS:MATCH-CONSTRAINT"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MATCH-CONSTRAINT">MATCH-CONSTRAINT</a></code></h4> <code class="qualifiers"></code> <code class="arguments">CONSTRAINT NODE</code><code>)</code>  </header> <pre class="docstring">Attempts to match the CONSTRAINT form against the node.
+Returns NIL if it fails to do so, unspecified otherwise.</pre> </article> </li><li> <a name="CLSS:MATCH-GROUP"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MATCH-GROUP">MATCH-GROUP</a></code></h4> <code class="qualifiers"></code> <code class="arguments">GROUP ROOT-NODE</code><code>)</code>  </header> <pre class="docstring">Match a matcher group against the root-node and possibly all its children.
+Returns an array of mached nodes.</pre> </article> </li><li> <a name="CLSS:MATCH-GROUP-BACKWARDS"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MATCH-GROUP-BACKWARDS">MATCH-GROUP-BACKWARDS</a></code></h4> <code class="qualifiers"></code> <code class="arguments">GROUP NODE</code><code>)</code>  </header> <pre class="docstring"/> </article> </li><li> <a name="CLSS:MATCH-MATCHER"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MATCH-MATCHER">MATCH-MATCHER</a></code></h4> <code class="qualifiers"></code> <code class="arguments">MATCHER NODE</code><code>)</code>  </header> <pre class="docstring">Attempts to match a matcher against a node.
+Returns T if all constraints match, NIL otherwise.</pre> </article> </li><li> <a name="CLSS:MATCH-PAIR"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MATCH-PAIR">MATCH-PAIR</a></code></h4> <code class="qualifiers"></code> <code class="arguments">COMBINATOR MATCHER NODES</code><code>)</code>  </header> <pre class="docstring">Match a combinator and matcher pair against a list of nodes.
+Returns a vector of matching nodes.</pre> </article> </li><li> <a name="CLSS:MATCH-SELECTOR"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:MATCH-SELECTOR">MATCH-SELECTOR</a></code></h4> <code class="qualifiers"></code> <code class="arguments">SELECTOR ROOT-NODE</code><code>)</code>  </header> <pre class="docstring">Match a selector against the root-node and possibly all its children.
+Returns an array of matched nodes.</pre> </article> </li><li> <a name="CLSS:NODE-MATCHES-P"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:NODE-MATCHES-P">NODE-MATCHES-P</a></code></h4> <code class="qualifiers"></code> <code class="arguments">SELECTOR NODE</code><code>)</code>  </header> <pre class="docstring">Tests whether the node matches the selector.
 
 SELECTOR --- A CSS-selector string or a compiled selector list.
-NODE     --- The node to test.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:PARSE-SELECTOR"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:PARSE-SELECTOR" class="name">PARSE-SELECTOR</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(STRING)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Parse a selector string into its &quot;compiled&quot; list form.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:REMOVE-PSEUDO-SELECTOR"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:REMOVE-PSEUDO-SELECTOR" class="name">REMOVE-PSEUDO-SELECTOR</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(NAME)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Removes the pseudo-selector associated with NAME.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:SELECT"/>
-                  <article>
-                    <header class="function">
-                      <span class="type">function</span>
-                      <code>
-                        <h4><a href="#CLSS:SELECT" class="name">SELECT</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(SELECTOR ROOT-NODE)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Match the given selector against the root-node and possibly all its children.
+NODE     --- The node to test.</pre> </article> </li><li> <a name="CLSS:PARSE-SELECTOR"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:PARSE-SELECTOR">PARSE-SELECTOR</a></code></h4> <code class="qualifiers"></code> <code class="arguments">STRING</code><code>)</code>  </header> <pre class="docstring">Parse a selector string into its &quot;compiled&quot; list form.</pre> </article> </li><li> <a name="CLSS:REMOVE-PSEUDO-SELECTOR"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:REMOVE-PSEUDO-SELECTOR">REMOVE-PSEUDO-SELECTOR</a></code></h4> <code class="qualifiers"></code> <code class="arguments">NAME</code><code>)</code>  </header> <pre class="docstring">Removes the pseudo-selector associated with NAME.</pre> </article> </li><li> <a name="CLSS:SELECT"> </a> <article> <header class="function"> <span class="type">function</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:SELECT">SELECT</a></code></h4> <code class="qualifiers"></code> <code class="arguments">SELECTOR ROOT-NODE</code><code>)</code>  </header> <pre class="docstring">Match the given selector against the root-node and possibly all its children.
 Returns an array of matched nodes.
 
 SELECTOR  --- A CSS-selector string or a compiled selector list.
-ROOT-NODE --- A single node, list or vector of nodes to start matching from.</pre>
-                  </article>
-                </li><li>
-                  <a name="CLSS:DEFINE-PSEUDO-SELECTOR"/>
-                  <article>
-                    <header class="macro">
-                      <span class="type">macro</span>
-                      <code>
-                        <h4><a href="#CLSS:DEFINE-PSEUDO-SELECTOR" class="name">DEFINE-PSEUDO-SELECTOR</a></h4>
-                        <span class="qualifiers"></span>
-                        <span class="arguments">(NAME (NODENAME &amp;REST ARGS-LAMBDA) &amp;BODY BODY)</span>
-                      </code>
-                    </header>
-                    <pre class="docstring">Define a new pseudo-selector of NAME.
+ROOT-NODE --- A single node, list or vector of nodes to start matching from.</pre> </article> </li><li> <a name="CLSS:DEFINE-PSEUDO-SELECTOR"> </a> <article> <header class="macro"> <span class="type">macro</span>  <code>(</code><h4 class="name"><code><a href="#CLSS:DEFINE-PSEUDO-SELECTOR">DEFINE-PSEUDO-SELECTOR</a></code></h4> <code class="qualifiers"></code> <code class="arguments">&amp;REST ARGS</code><code>)</code>  </header> <pre class="docstring">Define a new pseudo-selector of NAME.
 
 NAME        --- A symbol or string naming the selector (case insensitive always).
 NODENAME    --- A variable symbol the matched node is bound to.
 ARGS-LAMBDA --- A lambda-list of the expected arguments for the pseudo-selector.
                 Note that keyword arguments make no sense in this context.
-BODY        ::= form*</pre>
-                  </article>
-                </li></ul>
-            </li></ul>
-        </article>
-      
-    </div>
-  </body>
-</html>
+BODY        ::= form*</pre> </article> </li></ul> </li></ul> </article>  </main> </body> </html> 
