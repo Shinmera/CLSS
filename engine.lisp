@@ -62,7 +62,7 @@ for the selector to the matcher."))
   (:documentation "Condition signalled to immediately return from MATCH-PAIR."))
 
 (defun split (split string)
-  (declare (optimize (speed 3)))
+  (declare (optimize speed))
   (macrolet ((body ()
                `(loop with i = 0 and length = (length string)
                       while (< i length)
@@ -88,7 +88,7 @@ for the selector to the matcher."))
 (defun match-constraint (constraint node)
   "Attempts to match the CONSTRAINT form against the node.
 Returns NIL if it fails to do so, unspecified otherwise."
-  (declare (optimize (speed 3)))
+  (declare (optimize speed))
   (ecase (car constraint)
     (:c-any
      (and (not (text-node-p node))
@@ -110,9 +110,9 @@ Returns NIL if it fails to do so, unspecified otherwise."
     (:c-attr-equals
      (and (element-p node)
           (destructuring-bind (comparator attribute value) (cdr constraint)
-            (declare ((and simple-string) comparator attribute value))
+            (declare (type simple-string comparator attribute value))
             (let ((attr (attribute node attribute)))
-              (declare ((or null (and string)) attr))
+              (declare (type (or null string) attr))
               (when attr
                 (ecase (aref comparator 0)
                   (#\=
@@ -133,7 +133,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
      (and (element-p node)
           (destructuring-bind (name &rest args) (cdr constraint)
             (let ((pseudo (pseudo-selector name)))
-              (declare (function pseudo))
+              (declare (type function pseudo))
               (assert (not (null pseudo)) () 'undefined-pseudo-selector :name name)
               (not (null (apply pseudo node args)))))))))
 
@@ -143,7 +143,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
 (defun match-matcher (matcher node)
   "Attempts to match a matcher against a node.
 Returns T if all constraints match, NIL otherwise."
-  (declare (optimize (speed 3)))
+  (declare (optimize speed))
   (assert (eq (car matcher) :matcher) () 'selector-malformed matcher)
   (loop for constraint in (cdr matcher)
         always (match-constraint constraint node)))
@@ -153,7 +153,7 @@ Returns T if all constraints match, NIL otherwise."
 (defun match-pair (combinator matcher nodes)
   "Match a combinator and matcher pair against a list of nodes.
 Returns a vector of matching nodes."
-  (declare (optimize (speed 3)))
+  (declare (optimize speed))
   (handler-case
       (let ((resultset (make-array (length nodes) :adjustable T :fill-pointer 0)))
         (case combinator
@@ -206,7 +206,7 @@ Returns a vector of matching nodes."
 (defun match-group (group root-node)
   "Match a matcher group against the root-node and possibly all its children.
 Returns an array of mached nodes."
-  (declare (optimize (speed 3)))
+  (declare (optimize speed))
   (assert (eq (car group) :group) () 'selector-malformed)
   (let ((group (cdr group)))
     (loop with nodes = (etypecase root-node
@@ -225,7 +225,7 @@ Returns an array of mached nodes."
 (defun match-selector (selector root-node)
   "Match a selector against the root-node and possibly all its children.
 Returns an array of matched nodes."
-  (declare (optimize (speed 3)))
+  (declare (optimize speed))
   (assert (eq (car selector) :selector) () 'selector-malformed)
   (let ((selector (cdr selector)))
     (loop with result = (match-group (pop selector) root-node)
@@ -251,7 +251,7 @@ ROOT-NODE --- A single node, list or vector of nodes to start matching from."
 
 (declaim (ftype (function (list plump:node) boolean) match-group-backwards))
 (defun match-group-backwards (group node)
-  (declare (optimize (speed 3)))
+  (declare (optimize speed))
   (assert (eql (car group) :group) () 'selector-malformed)
   (let ((group (reverse (cdr group))))
     (when (match-matcher (pop group) node)
@@ -287,7 +287,7 @@ ROOT-NODE --- A single node, list or vector of nodes to start matching from."
 
 SELECTOR --- A CSS-selector string or a compiled selector list.
 NODE     --- The node to test."
-  (declare (optimize (speed 3)))
+  (declare (optimize speed))
   (let ((selector (ensure-selector selector)))
     (assert (eql (car selector) :selector) () 'selector-malformed)
     (loop for group in (cdr selector)
