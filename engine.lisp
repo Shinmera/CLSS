@@ -61,26 +61,44 @@ for the selector to the matcher."))
   ((%value :initarg :value :initform NIL :accessor value))
   (:documentation "Condition signalled to immediately return from MATCH-PAIR."))
 
-(defun split (split string)
-  (declare (optimize speed))
-  (macrolet ((body ()
-               `(loop with i = 0 and length = (length string)
-                      while (< i length)
-                      for item = (with-output-to-string (output)
-                                   (loop while (< i length)
-                                         for char = (aref string i)
-                                         do (cond ((char= char split)
-                                                   (loop while (and (< i length)
-                                                                    (char= (aref string i) split))
-                                                         do (incf i))
-                                                   (return))
-                                                  (T (write-char char output)
-                                                     (incf i)))))
-                      unless (string= item "")
-                      collect item)))
-    (typecase string
-      (simple-string (body))
-      (string (body)))))
+(defun split-member (item split string)
+  (declare (optimize speed)
+           (type string item string)
+           (type character split))
+  (macrolet ((with-stringcase (var body)
+               `(typecase ,var
+                  (simple-string ,body)
+                  (string ,body)))
+             (body ()
+               `(loop :with res = nil
+                      :and i = 0
+                      :and length = (length string)
+                      :and item-length = (length item)
+
+                      :while (and (not res) (< i length))
+                      :do (loop :for j :from 0
+                                :while (and (< j item-length) (< i length))
+                                :for char = (aref string i)
+                                :for item-char = (aref item j)
+                                :do (cond ((char= char split)
+                                           (loop :while (and (< i length)
+                                                             (char= (aref string i)
+                                                                    split))
+                                                 :do (incf i))
+                                           (return nil))
+                                          ((char= char item-char)
+                                           (when (and (= (1+ j) item-length)
+                                                      (or (= (1+ i) length)
+                                                          (char= (aref string (1+ i))
+                                                                 split)))
+                                             (return-from split-member t))
+                                           (incf i))
+                                          (t
+                                           (incf i)
+                                           (return nil)))))))
+    (with-stringcase item
+      (with-stringcase string
+        (body)))))
 
 (declaim (ftype (function (list plump-dom:node)
                           (values boolean))
@@ -103,9 +121,11 @@ Returns NIL if it fails to do so, unspecified otherwise."
           (string-equal (attribute node "id") (second constraint))))
     (:c-class
      (and (element-p node)
-          (not (null (member (second constraint) (split #\Space (or (attribute node "class") "")) :test #'string-equal)))))
+          (split-member (second constraint) #\Space (or (attribute node "class") ""))))
     (:c-attr-exists
      (and (element-p node)
+
+
           (not (null (attribute node (second constraint))))))
     (:c-attr-equals
      (and (element-p node)
@@ -118,7 +138,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
                   (#\=
                    (string-equal attr value))
                   (#\~
-                   (not (null (member value (split #\Space attr) :test #'string-equal))))
+                   (split-member value #\Space attr))
                   (#\^
                    (and (<= (length value) (length attr))
                         (string= value attr :end2 (length value))))
@@ -128,7 +148,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
                   (#\*
                    (not (null (search value attr))))
                   (#\|
-                   (not (null (member value (split #\- attr) :test #'string-equal))))))))))
+                   (split-member value #\- attr))))))))
     (:c-pseudo
      (and (element-p node)
           (destructuring-bind (name &rest args) (cdr constraint)
