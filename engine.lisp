@@ -168,9 +168,69 @@ Returns T if all constraints match, NIL otherwise."
   (loop for constraint in (cdr matcher)
         always (match-constraint constraint node)))
 
+(declaim (ftype (function (character list plump:node (function (plump:node) T))
+                          (values &optional null))
+                match-pair-depth))
+(defun match-pair-depth (combinator matcher parent extender)
+  "Match a combinator and matcher pair against a list of nodes.
+Returns a vector of matching nodes."
+  (declare (optimize speed))
+  (block match-pair-depth
+    (handler-case
+        (prog1 (values)
+          (case combinator
+            (#\Space
+             (labels ((match-recursive (nodes)
+                        (declare ((and (vector plump:node) (not simple-array)) nodes))
+                        (loop for node across nodes
+                              when (match-matcher matcher node)
+                                do (funcall extender node)
+                              when (plump:nesting-node-p node)
+                                do (match-recursive (children node)))))
+               (match-recursive (children parent))))
+            (#\>
+             (loop for node across (the (and (vector plump:node) (not simple-array))
+                                        (children parent))
+                   when (match-matcher matcher node)
+                     do (funcall extender node)))
+            (#\+
+             (let ((position (child-position parent))
+                   (family (family parent)))
+               (declare (type fixnum position)
+                        (type (and (vector plump-dom:child-node)
+                                   (not simple-array))
+                              family))
+               (loop for i of-type fixnum from position below (1- (fill-pointer family))
+                     for sibling = (aref family (1+ i))
+                     ;; This is gross. In order to properly support
+                     ;; edge cases like a foo+^bar we cannot exclude
+                     ;; anything other than these two...
+                     do (when (and (not (text-node-p parent))
+                                   (not (comment-p parent)))
+                          (when (match-matcher matcher sibling)
+                            (funcall extender sibling))
+                          (return)))))
+            (#\~
+             (let ((position (child-position parent))
+                   (family (family parent)))
+               (declare (type fixnum position)
+                        (type (and (vector plump-dom:child-node)
+                                   (not simple-array))
+                              family))
+               (loop for i of-type fixnum from position below (fill-pointer family)
+                     for sibling = (aref family i)
+                     do (when (match-matcher matcher sibling)
+                          (funcall extender sibling)
+                          (return)))))))
+      (complete-match-pair (o)
+        (declare (ignore o))
+        (return-from match-pair-depth)))
+    (values)))
+
 (declaim (ftype (function (character list (and (vector plump:node) (not simple-array)))
-                          (values (and (vector plump:node) (not simple-array)) &optional)) match-pair))
-(defun match-pair (combinator matcher nodes)
+                          (values (and (vector plump:node) (not simple-array)) &optional))
+                match-pair-breadth))
+(defun match-pair-breadth (combinator matcher nodes)
   "Match a combinator and matcher pair against a list of nodes.
 Returns a vector of matching nodes."
   (declare (optimize speed))
@@ -182,9 +242,9 @@ Returns a vector of matching nodes."
                       (declare ((and (vector plump:node) (not simple-array)) nodes))
                       (loop for node across nodes
                             when (match-matcher matcher node)
-                            do (vector-push-extend node resultset)
+                              do (vector-push-extend node resultset)
                             when (nesting-node-p node)
-                            do (match-recursive (children node)))))
+                              do (match-recursive (children node)))))
              (loop for node across nodes
                    do (match-recursive (children node)))))
           (#\>
@@ -192,7 +252,7 @@ Returns a vector of matching nodes."
                  do (loop for node across (the (and (vector plump:node) (not simple-array))
                                                (children parent))
                           when (match-matcher matcher node)
-                          do (vector-push-extend node resultset))))
+                            do (vector-push-extend node resultset))))
           (#\+
            (loop for node across nodes
                  for position of-type fixnum = (child-position node)
@@ -218,55 +278,82 @@ Returns a vector of matching nodes."
                                (return))))))
         resultset)
     (complete-match-pair (o)
-      (return-from match-pair (value o)))))
+      (return-from match-pair-breadth (value o)))))
 
-(declaim (ftype (function (list (or plump:node vector list))
+(declaim (ftype (function (list (or plump:node vector list) &optional keyword)
                           (values (and (vector plump:node) (not simple-array))))
                 match-selector))
-(defun match-group (group root-node)
+(defun match-group (group root-node &optional (search-type :DFS))
   "Match a matcher group against the root-node and possibly all its children.
 Returns an array of mached nodes."
   (declare (optimize speed))
   (assert (eq (car group) :group) () 'selector-malformed)
   (let ((group (cdr group)))
-    (loop with nodes = (etypecase root-node
-                         (plump:node (make-array 1 :initial-element root-node :adjustable T :fill-pointer T))
-                         (vector root-node)
-                         (list (coerce root-node 'vector)))
-          for combinator = (pop group)
-          for matcher = (pop group)
-          while matcher
-          do (setf nodes (match-pair combinator matcher nodes))
-          finally (return nodes))))
+    (ecase search-type
+        (:DFS
+         (let* ((result (make-array 10 :adjustable T :fill-pointer 0)))
+           (labels ((add-to-result (node)
+                      (vector-push-extend node result))
+                    (search-node (node group)
+                      (let ((combinator (car group))
+                            (matcher (cadr group))
+                            (group (cddr group)))
+                        (if (second group)
+                            (match-pair-depth combinator
+                                              matcher
+                                              node
+                                              (lambda (node)
+                                                (search-node node group)))
+                            (match-pair-depth combinator
+                                              matcher
+                                              node
+                                              #'add-to-result)))))
+             (etypecase root-node
+               (plump:node (search-node root-node group))
+               (sequence (map nil
+                              (lambda (node) (search-node node group))
+                              root-node)))
+             result)))
+      (:BFS
+       (loop with nodes = (etypecase root-node
+                            (plump:node (make-array 1 :initial-element root-node :adjustable T :fill-pointer T))
+                            (vector root-node)
+                            (list (coerce root-node 'vector)))
+             for combinator = (pop group)
+             for matcher = (pop group)
+             while matcher
+             do (setf nodes (match-pair-breadth combinator matcher nodes))
+             finally (return nodes))))))
 
-(declaim (ftype (function (list (or plump:node vector list))
+(declaim (ftype (function (list (or plump:node vector list) keyword)
                           (values (and (vector plump:node) (not simple-array))))
                 match-selector))
-(defun match-selector (selector root-node)
+(defun match-selector (selector root-node search-type)
   "Match a selector against the root-node and possibly all its children.
 Returns an array of matched nodes."
   (declare (optimize speed))
   (assert (eq (car selector) :selector) () 'selector-malformed)
   (let ((selector (cdr selector)))
-    (loop with result = (match-group (pop selector) root-node)
+    (loop with result = (match-group (pop selector) root-node search-type)
           for group in selector
-          do (array-utils:vector-append result (match-group group root-node))
+          do (array-utils:vector-append result (match-group group root-node search-type))
           finally (return result))))
 
-(declaim (ftype (function ((or string list) (or plump:node vector list))
+(declaim (ftype (function ((or string list) (or plump:node vector list) &key (:search-type keyword))
                           (values (and (vector plump:node) (not simple-array)) &optional))
                 select))
-(defun select (selector root-node)
+(defun select (selector root-node &key (search-type :DFS))
   "Match the given selector against the root-node and possibly all its children.
 Returns an array of matched nodes.
 
-SELECTOR  --- A CSS-selector string or a compiled selector list.
-ROOT-NODE --- A single node, list or vector of nodes to start matching from."
-  (match-selector (ensure-selector selector) root-node))
+SELECTOR    --- A CSS-selector string or a compiled selector list.
+ROOT-NODE   --- A single node, list or vector of nodes to start matching from.
+SEARCH-TYPE --- Select the search algorithm, options are \":DFS\" and \":BFS\""
+  (match-selector (ensure-selector selector) root-node search-type))
 
-(define-compiler-macro select (&whole whole &environment env selector root-node)
+(define-compiler-macro select (&whole whole &environment env selector root-node &key (search-type :DFS))
   (if (constantp selector env)
-      `(match-selector (load-time-value (ensure-selector ,selector)) ,root-node)
+      `(match-selector (load-time-value (ensure-selector ,selector)) ,root-node ,search-type)
       whole))
 
 (declaim (ftype (function (list plump:node) boolean) match-group-backwards))
