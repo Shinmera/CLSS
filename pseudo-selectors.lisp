@@ -132,7 +132,7 @@
       (and (split-member "warning" #\Space classes) "warning"))))
 
 (define-pseudo-selector not (node selector)
-  (not (match-matcher (third (parse-selector selector)) node)))
+  (not (match-matcher (third (second (parse-selector selector))) node)))
 
 ;;; Extra extensions specific to CLSS
 
