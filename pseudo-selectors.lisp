@@ -49,7 +49,7 @@
   (= (element-position node) 0))
 
 (define-pseudo-selector last-child (node)
-  (loop for i downfrom (length (family node)) to 0
+  (loop for i downfrom (1- (length (family node))) to 0
         when (element-p node)
           do (return (eq (elt (family node) i) node))))
 
