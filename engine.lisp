@@ -221,8 +221,8 @@ match as the only argument."
                           (funcall matching-nodes-processor sibling)
                           (return)))))))
     (complete-match-pair (o)
-      (declare (ignore o))
-      (return-from match-pair-depth nil))))
+      (loop for node across (value o)
+            do (funcall matching-nodes-processor node)))))
 
 (declaim (ftype (function (character list (and (vector plump:node) (not simple-array)))
                           (values (and (vector plump:node) (not simple-array)) &optional))
