@@ -61,42 +61,29 @@ for the selector to the matcher."))
   ((%value :initarg :value :initform NIL :accessor value))
   (:documentation "Condition signalled to immediately return from MATCH-PAIR."))
 
-(defun split-member (item split string)
+(defun find-substring (item string split)
+  "Returns ITEM if it is an element of STRING split by the SPLIT character."
   (declare (optimize speed)
            (type string item string)
            (type character split))
-  (macrolet ((with-stringcase (var body)
+  (macrolet ((with-stringcase (var &body body)
                `(typecase ,var
-                  (simple-string ,body)
-                  (string ,body))))
+                  (simple-string ,@body)
+                  (string ,@body))))
     (with-stringcase item
       (with-stringcase string
-        (loop  with res = nil
-               and i = 0
-               and length = (length string)
-               and item-length = (length item)
-
-               while (and (not res) (< i length))
-               do (loop  for j  from 0
-                         while (and (< j item-length) (< i length))
-                         for char = (aref string i)
-                         for item-char = (aref item j)
-                         do (cond ((char= char split)
-                                   (loop  while (and (< i length)
-                                                     (char= (aref string i)
-                                                            split))
-                                          do (incf i))
-                                   (return nil))
-                                  ((char= char item-char)
-                                   (when (and (= (1+ j) item-length)
-                                              (or (= (1+ i) length)
-                                                  (char= (aref string (1+ i))
-                                                         split)))
-                                     (return-from split-member t))
-                                   (incf i))
-                                  (t
-                                   (incf i)
-                                   (return nil)))))))))
+        (let ((start 0) (end 0))
+          (declare (type fixnum start end))
+          (flet ((test ()
+                   (when (string= item string :start2 start :end2 end)
+                     (return-from find-substring item))))
+            (loop for char = (aref string end)
+                  do (when (char= char split)
+                       (test)
+                       (setf start (1+ end)))
+                     (incf end)
+                  while (< end (length string))
+                  finally (test) (return NIL))))))))
 
 (declaim (ftype (function (list plump-dom:node)
                           (values boolean))
@@ -119,7 +106,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
           (string-equal (attribute node "id") (second constraint))))
     (:c-class
      (and (element-p node)
-          (split-member (second constraint) #\Space (or (attribute node "class") ""))))
+          (find-substring (second constraint) (or (attribute node "class") "") #\Space)))
     (:c-attr-exists
      (and (element-p node)
 
@@ -136,7 +123,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
                   (#\=
                    (string-equal attr value))
                   (#\~
-                   (split-member value #\Space attr))
+                   (find-substring value attr #\Space))
                   (#\^
                    (and (<= (length value) (length attr))
                         (string= value attr :end2 (length value))))
@@ -146,7 +133,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
                   (#\*
                    (not (null (search value attr))))
                   (#\|
-                   (split-member value #\- attr))))))))
+                   (find-substring value attr #\-))))))))
     (:c-pseudo
      (and (element-p node)
           (destructuring-bind (name &rest args) (cdr constraint)
