@@ -101,9 +101,8 @@
 (define-pseudo-selector lang (node language)
   (let ((languages (or (attribute node "lang")
                        (attribute node "xml:lang"))))
-    (when languages
-      (and (split-member language #\- languages)
-           language))))
+    (when (and languages (find-substring language languages #\-))
+      language)))
 
 (define-pseudo-selector enabled (node)
   (has-attribute node "enabled"))
@@ -128,8 +127,8 @@
 
 (define-pseudo-selector warning (node)
   (let ((classes (attribute node "class")))
-    (when classes
-      (and (split-member "warning" #\Space classes) "warning"))))
+    (when (and classes (find-substring "warning" classes #\Space))
+      "warning")))
 
 (define-pseudo-selector not (node selector)
   (not (match-matcher (third (second (parse-selector selector))) node)))
