@@ -43,15 +43,19 @@
 
 (defun read-tag-constraint ()
   "Reads a tag constraint and returns it."
-  (make-tag-constraint
-   (with-output-to-string (out)
-     (loop with matcher = (make-matcher :clss-tag-name)
-           for prev = #\  then char
-           for char = (peek)
-           while (funcall matcher)
-           do (unless (and (eql char #\:) (eql prev #\:))
-                (write-char char out))
-              (advance)))))
+  (let ((out (make-string-output-stream)))
+    (loop with matcher = (make-matcher :clss-tag-name)
+          for prev = #\  then char
+          for char = (peek)
+          while (funcall matcher)
+          do (unless (and (eql char #\:) (eql prev #\:))
+               (write-char char out))
+             (advance))
+    (let ((name (get-output-stream-string out)))
+      (when (string= "" name)
+        (error "The CSS selector ~s contains invalid characters around position ~d."
+               plump-lexer:*string* plump-lexer:*index*))
+      (make-tag-constraint name))))
 
 (defun read-id-constraint ()
   "Reads an ID attribute constraint and returns it."
