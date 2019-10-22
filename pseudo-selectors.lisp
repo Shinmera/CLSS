@@ -13,10 +13,17 @@
   (cond ((string-equal n "odd") (oddp i))
         ((string-equal n "even") (evenp i))
         ((find #\n n)
-         (let ((ppos (position #\+ n)))
-           (if ppos
-               (= (+ (mod i (parse-integer n :junk-allowed T)) (parse-integer (subseq n (1+ ppos)))) 0)
-               (= (mod i (parse-integer n :junk-allowed T)) 0))))
+         (let ((a (let ((r (parse-integer n :junk-allowed t)))
+                    (cond (r r)
+                          ((eq #\- (elt n 0)) -1)
+                          (T 1))))
+               (b (let ((ppos (position #\+ n)))
+                    (if ppos
+                        (parse-integer (subseq n (1+ ppos)))
+                        0))))
+           (multiple-value-bind (quot rem)
+             (floor (- i b) a)
+             (and (zerop rem) (>= quot 0)))))
         (T (= (parse-integer n) i))))
 
 (define-pseudo-selector nth-child (node n)

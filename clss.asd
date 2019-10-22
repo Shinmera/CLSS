@@ -21,5 +21,6 @@
                (:file "parser")
                (:file "engine")
                (:file "pseudo-selectors"))
+  :in-order-to ((test-op (test-op clss-test)))
   :depends-on (:array-utils
                :plump))
