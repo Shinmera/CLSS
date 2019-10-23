@@ -15,7 +15,7 @@
         ((find #\n n)
          (let* ((npos (position #\n n))
                 (mult (cond ((= 0 npos) 1)
-                            ((char= #\- (char n 0)) -1)
+                            ((and (= 1 npos) (char= #\- (char n 0))) -1)
                             (T (parse-integer n :end npos))))
                 (off (if (< (1+ npos) (length n))
                          (parse-integer n :start (1+ npos))
