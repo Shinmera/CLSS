@@ -87,6 +87,7 @@ for the selector to the matcher."))
                      (incf end)
                   finally (test) (return NIL))))))))
 
+#-lispworks
 (declaim (ftype (function (list plump-dom:node)
                           (values boolean))
                 match-constraint))
@@ -144,6 +145,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
               (assert (not (null pseudo)) () 'undefined-pseudo-selector :name name)
               (not (null (apply pseudo node args)))))))))
 
+#-lispworks
 (declaim (ftype (function (list plump:node)
                           (values boolean))
                 match-matcher))
@@ -155,6 +157,7 @@ Returns T if all constraints match, NIL otherwise."
   (loop for constraint in (cdr matcher)
         always (match-constraint constraint node)))
 
+#-lispworks
 (declaim (ftype (function (character list plump:node (function (plump:node) T))
                           (values &optional null))
                 match-pair-depth))
@@ -213,6 +216,7 @@ match as the only argument."
       (loop for node across (value o)
             do (funcall matching-nodes-processor node)))))
 
+#-lispworks
 (declaim (ftype (function (character list (and (vector plump:node) (not simple-array)))
                           (values (and (vector plump:node) (not simple-array)) &optional))
                 match-pair-breadth))
@@ -266,6 +270,7 @@ Returns a vector of matching nodes."
     (complete-match-pair (o)
       (return-from match-pair-breadth (value o)))))
 
+#-lispworks
 (declaim (ftype (function (list (or plump:node vector list) &optional keyword)
                           (values (and (vector plump:node) (not simple-array))))
                 match-selector))
@@ -311,6 +316,7 @@ Returns an array of mached nodes."
              do (setf nodes (match-pair-breadth combinator matcher nodes))
              finally (return nodes))))))
 
+#-lispworks
 (declaim (ftype (function (list (or plump:node vector list) keyword)
                           (values (and (vector plump:node) (not simple-array))))
                 match-selector))
@@ -325,6 +331,7 @@ Returns an array of matched nodes."
           do (array-utils:vector-append result (match-group group root-node search-type))
           finally (return result))))
 
+#-lispworks
 (declaim (ftype (function ((or string list) (or plump:node vector list) &optional keyword)
                           (values (and (vector plump:node) (not simple-array)) &optional))
                 select))
@@ -342,6 +349,7 @@ SEARCH-TYPE --- Select the search algorithm, options are \":depth-first\" and \"
       `(match-selector (load-time-value (ensure-selector ,selector)) ,root-node ,search-type)
       whole))
 
+#-lispworks
 (declaim (ftype (function (list plump:node) boolean) match-group-backwards))
 (defun match-group-backwards (group node)
   (declare (optimize speed))
@@ -374,6 +382,7 @@ SEARCH-TYPE --- Select the search algorithm, options are \":depth-first\" and \"
                         finally (return-from match-group-backwards NIL))))
             finally (return T)))))
 
+#-lispworks
 (declaim (ftype (function (T plump:node) boolean) node-matches-p))
 (defun node-matches-p (selector node)
   "Tests whether the node matches the selector.

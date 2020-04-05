@@ -142,3 +142,10 @@
 
 (define-pseudo-selector first-only (node)
   (signal 'complete-match-pair :value (make-array 1 :initial-element node :adjustable T :fill-pointer T)))
+
+(define-pseudo-selector contains (node word)
+  (let* ((word (remove-if (lambda (x)
+                            (or x (string= "" x)))
+                          (ppcre:split "[\"']" word)))
+         (word (progn (capi:display-message "~S" word) (car word))))
+    (search word (text node))))
