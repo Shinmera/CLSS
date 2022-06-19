@@ -31,6 +31,7 @@
    #:match-selector
    
    #:select
+   #:ordered-select
 
    #:match-group-backwards
    #:node-matches-p)

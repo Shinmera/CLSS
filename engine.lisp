@@ -390,3 +390,26 @@ NODE     --- The node to test."
   (if (constantp selector env)
       `(node-matches-p (load-time-value (ensure-selector ,selector)) ,root-node)
       whole))
+
+(defun ordered-select (selector root-node)
+  "Match the given selector against the root-node and possibly all its children.
+Return an array of matching nodes ordered by their depth-first
+traversal appearance in the DOM.
+
+SELECTOR  --- A CSS-selector string or a compiled selector list.
+ROOT-NODE --- A single node, list or vector of nodes to start matching from."
+  (declare (optimize speed))
+  (let ((matched-nodes (make-array 0 :adjustable T :fill-pointer 0))
+        (selector (ensure-selector selector)))
+    (assert (eql (car selector) :selector) () 'selector-malformed)
+    (labels ((collect-if-match (element)
+               (when (clss:node-matches-p selector element)
+                 (vector-push-extend element matched-nodes))
+               (map NIL #'collect-if-match (plump:child-elements element))))
+      (collect-if-match root-node)
+      matched-nodes)))
+
+(define-compiler-macro ordered-select (&whole whole &environment env selector root-node)
+  (if (constantp selector env)
+      `(ordered-select (load-time-value (ensure-selector ,selector)) ,root-node)
+      whole))
