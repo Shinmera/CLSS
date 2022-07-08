@@ -55,8 +55,9 @@
 
 (define-pseudo-selector last-child (node)
   (loop for i downfrom (1- (length (family node))) to 0
-        when (element-p node)
-          do (return (eq (elt (family node) i) node))))
+        for sibling = (aref (family node) i)
+        when (element-p sibling)
+          do (return (eq sibling node))))
 
 (define-pseudo-selector first-of-type (node)
   (loop for sibling across (family node)
