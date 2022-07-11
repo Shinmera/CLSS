@@ -413,3 +413,16 @@ ROOT-NODE --- A single node, list or vector of nodes to start matching from."
   (if (constantp selector env)
       `(ordered-select (load-time-value (ensure-selector ,selector)) ,root-node)
       whole))
+
+(defun select1 (selector root-node)
+  "Match the given selector against the root-node and possibly all its children.
+Returns the first matching node.
+
+SELECTOR    --- A CSS-selector string or a compiled selector list.
+ROOT-NODE   --- A single node, list or vector of nodes to start matching from."
+  (elt (ordered-select select root-node) 0))
+
+(define-compiler-macro select1 (&whole whole &environment env selector root-node &optional (search-type :depth-first))
+  (if (constantp selector env)
+      `(elt (ordered-select (load-time-value (ensure-selector ,selector)) ,root-node) 0)
+      whole))
