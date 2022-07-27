@@ -92,7 +92,8 @@
     ((#\" #\')
      (prog2
          (consume)
-         (consume-until (make-matcher (or (is #\") (is #\'))))
+         (consume-until (make-matcher (and (not (prev (is #\\)))
+                                           (or (is #\") (is #\')))))
        (consume)))
     (T (consume-until (make-matcher (is #\]))))))
 
