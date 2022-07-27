@@ -20,20 +20,10 @@
 ;; PSEUDO        ::= #\: NAME ARGUMENTS?
 ;; ARGUMENTS     ::= #\( VALUE (#\, VALUE)* #\)
 
-;; Taken from https://html.spec.whatwg.org/multipage/custom-elements.html#valid-custom-element-name
+;; https://www.w3.org/TR/CSS21/syndata.html#value-def-identifier
 (define-matcher clss-name (or (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (any #\- #\\ #\_ #\! #.(code-char #xB7))
-                              (in #.(code-char #xC0) #.(code-char #xD6))
-                              (in #.(code-char #xD8) #.(code-char #xF6))
-                              (in #.(code-char #xF8) #.(code-char #x37D))
-                              (in #.(code-char #x37F) #.(code-char #x1FFF))
-                              (in #.(code-char #x200C) #.(code-char #x200D))
-                              (in #.(code-char #x203F) #.(code-char #x2040))
-                              (in #.(code-char #x2070) #.(code-char #x218F))
-                              (in #.(code-char #x2C00) #.(code-char #x2FEF))
-                              (in #.(code-char #x3001) #.(code-char #xD7FF))
-                              (in #.(code-char #xF900) #.(code-char #xFDCF))
-                              (in #.(code-char #xFDF0) #.(code-char #xFFFD))
-                              (in #.(code-char #x10000) #.(code-char #xEFFFF))
+                              ;; Any better way to allow all the values higher than some threshold?
+                              (in #.(code-char #xA0) #.(code-char (1- char-code-limit)))
                               (and (in #.(code-char #x1F) #.(code-char #xFF))
                                    (prev (is #\\)))))
 (define-matcher clss-tag-name (or :clss-name (and (is #\:) (next (is #\:))) (and (is #\:) (prev (is #\:)))))
