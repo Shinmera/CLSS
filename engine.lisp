@@ -87,6 +87,90 @@ for the selector to the matcher."))
                      (incf end)
                   finally (test) (return NIL))))))))
 
+;; https://drafts.csswg.org/cssom/#serialize-an-identifier
+(defun css-escape (string)
+  "Escape all the invalid CSS characters to their safe counterparts."
+  (declare (optimize speed)
+           (type string string))
+  (let ((buffer (make-array 0 :adjustable t :fill-pointer 0)))
+    (labels ((escapable (char)
+               (let ((code (char-code char)))
+                 (or (<= code #x1f)
+                     (= code #x7f)
+                     (not (or (>= code #x80)
+                              (char= char #\-)
+                              (char= char #\_)
+                              (digit-char-p char)
+                              (char<= #\A char #\Z)
+                              (char<= #\a char #\z))))))
+             (extend-with-string (string)
+               (loop for char across string
+                     do (vector-push-extend char buffer)))
+             (extend-with-escaped (char)
+               (extend-with-string (format nil "\\~X " (char-code char))))
+             (escape-regular-string (string)
+               (loop for char across string
+                     if (char= #\Nul char)
+                       do (extend-with-string "\\fffd ")
+                     else if (or (<= #x1 (char-code char) #x1f)
+                                 (= (char-code char) #x7f))
+                            do (extend-with-escaped char)
+                     else if (escapable char)
+                            do (vector-push-extend #\\ buffer)
+                            and do (vector-push-extend char buffer)
+                     else
+                       do (vector-push-extend char buffer))))
+      (when (and (= (length string) 1)
+                 (char= #\- (elt string 0)))
+        (extend-with-escaped (elt string 0)))
+      ;; Process first char.
+      (when (>= (length string) 1)
+        (cond
+          ((digit-char-p (elt string 0))
+           (extend-with-escaped (elt string 0)))
+          (t
+           (escape-regular-string (subseq string 0 1)))))
+      ;; Second char.
+      (when (>= (length string) 2)
+        (cond
+          ((and (char= #\- (elt string 0))
+                (digit-char-p (elt string 1)))
+           (extend-with-escaped (elt string 1)))
+          (t
+           (escape-regular-string (subseq string 1 2)))))
+      ;; All the rest.
+      (when (> (length string) 2)
+        (escape-regular-string (subseq string 2)))
+      (coerce buffer 'string))))
+
+(defun css-unescape (string)
+  "Get the original contents of the escaped STRING."
+  (declare (optimize speed)
+           (type string string))
+  (if (search "\\" string)
+      (loop with buffer = (make-array 0 :adjustable t :fill-pointer 0)
+            for index below (length string)
+            for char = (elt string index)
+            until (= index (length string))
+            if (search "\\fffd " string
+                       :start2 index :end2 (min (length string)
+                                                (+ index 6)))
+              do (vector-push-extend #\Nul buffer)
+              and do (setf index (position #\Space string :start (1+ index)))
+            else if (and (eql #\\ char)
+                         (digit-char-p (elt string (1+ index)) 16))
+                   do (vector-push-extend
+                       (code-char (parse-integer string :radix 16 :start (1+ index)))
+                       buffer)
+                   and do (setf index (position #\Space string :start (1+ index)))
+            else if (eql #\\ char)
+                   do (vector-push-extend (elt string (1+ index)) buffer)
+                   and do (incf index)
+            else
+              do (vector-push-extend char buffer)
+            finally (return (coerce buffer 'string)))
+      string))
+
 (declaim (ftype (function (list plump-dom:node)
                           (values boolean))
                 match-constraint))
@@ -105,20 +189,21 @@ Returns NIL if it fails to do so, unspecified otherwise."
      (typep node (second constraint)))
     (:c-id
      (and (element-p node)
-          (string-equal (attribute node "id") (second constraint))))
+          (string-equal (attribute node "id") (css-unescape (second constraint)))))
     (:c-class
      (and (element-p node)
-          (find-substring (second constraint) (or (attribute node "class") "") #\Space)))
+          (find-substring (css-unescape (second constraint)) (or (attribute node "class") "") #\Space)))
     (:c-attr-exists
      (and (element-p node)
 
 
-          (not (null (attribute node (second constraint))))))
+          (not (null (attribute node (css-unescape (second constraint)))))))
     (:c-attr-equals
      (and (element-p node)
           (destructuring-bind (comparator attribute value) (cdr constraint)
             (declare (type simple-string comparator attribute value))
-            (let ((attr (attribute node attribute)))
+            (let ((attr (attribute node attribute))
+                  (value (css-unescape value)))
               (declare (type (or null string) attr))
               (when attr
                 (ecase (aref comparator 0)
