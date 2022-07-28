@@ -48,73 +48,78 @@
   "Escape all the invalid CSS characters to their safe counterparts."
   (declare (optimize speed)
            (type string string))
-  (let ((buffer (make-array 0 :adjustable t :fill-pointer 0)))
-    (labels ((extend-with-string (string)
-               (loop for char across string
-                     do (vector-push-extend char buffer)))
-             (extend-with-escaped (char)
-               (extend-with-string (format nil "\\~X " (char-code char))))
-             (escape-regular-string (string)
-               (loop for char across string
-                     if (char= #\Nul char)
-                       do (extend-with-string "\\fffd ")
-                     else if (or (<= #x1 (char-code char) #x1f)
-                                 (= (char-code char) #x7f))
-                            do (extend-with-escaped char)
-                     else if (escapable char)
-                            do (vector-push-extend #\\ buffer)
-                            and do (vector-push-extend char buffer)
-                     else
-                       do (vector-push-extend char buffer))))
-      (when (and (= (length string) 1)
-                 (char= #\- (elt string 0)))
-        (extend-with-escaped (elt string 0)))
-      ;; Process first char.
-      (when (>= (length string) 1)
-        (cond
-          ((digit-char-p (elt string 0))
-           (extend-with-escaped (elt string 0)))
-          (t
-           (escape-regular-string (subseq string 0 1)))))
-      ;; Second char.
-      (when (>= (length string) 2)
-        (cond
-          ((and (char= #\- (elt string 0))
-                (digit-char-p (elt string 1)))
-           (extend-with-escaped (elt string 1)))
-          (t
-           (escape-regular-string (subseq string 1 2)))))
-      ;; All the rest.
-      (when (> (length string) 2)
-        (escape-regular-string (subseq string 2)))
-      (coerce buffer 'string))))
+  (if (or (some #'escapable string)
+          (and (= 1 (length string))
+               (char= #\- (elt string 0)))
+          (and (>= (length string) 1)
+               (digit-char-p (elt string 0)))
+          (and (>= (length string) 2)
+               (char= #\- (elt string 0))
+               (digit-char-p (elt string 1))))
+      (with-output-to-string (s)
+        (flet ((escape-regular-string (string)
+                 (dotimes (index (length string))
+                   (let ((char (elt string index)))
+                     (cond
+                       ((char= #\Nul char)
+                        (write-string "\\fffd " s))
+                       ((or (<= #x1 (char-code char) #x1f)
+                            (= (char-code char) #x7f))
+                        (format s "\\~X " (char-code char)))
+                       ((escapable char)
+                        (write-char #\\ s)
+                        (write-char char s))
+                       (t
+                        (write-char char s)))))))
+          ;; Process first char.
+          (cond
+            ((and (= (length string) 1)
+                  (char= #\- (elt string 0)))
+             (write-char #\\ s)
+             (write-char (elt string 0) s))
+            ((and (= (length string) 1)
+                  (digit-char-p (elt string 0)))
+             (format s "\\~X " (char-code (elt string 0))))
+            (t
+             (escape-regular-string (subseq string 0 1))))
+          ;; Second char.
+          (when (>= (length string) 2)
+            (if (and (char= #\- (elt string 0))
+                     (digit-char-p (elt string 1)))
+                (format s "\\~X " (char-code (elt string 1)))
+                (escape-regular-string (subseq string 1 2))))
+          ;; All the rest.
+          (when (> (length string) 2)
+            (escape-regular-string (subseq string 2)))))
+      string))
 
 (defun css-unescape (string)
   "Get the original contents of the escaped STRING."
   (declare (optimize speed)
            (type string string))
   (if (search "\\" string)
-      (loop with buffer = (make-array 0 :adjustable t :fill-pointer 0)
-            for index below (length string)
-            for char = (elt string index)
-            until (= index (length string))
-            if (search "\\fffd " string
-                       :start2 index :end2 (min (length string)
-                                                (+ index 6)))
-              do (vector-push-extend #\Nul buffer)
-              and do (setf index (position #\Space string :start (1+ index)))
-            else if (and (eql #\\ char)
-                         (digit-char-p (elt string (1+ index)) 16))
-                   do (vector-push-extend
-                       (code-char (parse-integer string :radix 16 :start (1+ index)))
-                       buffer)
-                   and do (setf index (position #\Space string :start (1+ index)))
-            else if (eql #\\ char)
-                   do (vector-push-extend (elt string (1+ index)) buffer)
-                   and do (incf index)
-            else
-              do (vector-push-extend char buffer)
-            finally (return (coerce buffer 'string)))
+      (with-output-to-string (s)
+        (do* ((index 0 (1+ index))
+              (char (elt string index) (elt string index))
+              (next-char (elt string (1+ index)) (elt string (1+ index))))
+             (nil)
+          (cond
+            ((search "\\fffd " string
+                     :start2 index :end2 (min (length string)
+                                              (+ index 6)))
+             (write-char #\Nul s)
+             (setf index (position #\Space string :start (1+ index))))
+            ((and (eql #\\ char)
+                  (digit-char-p next-char 16))
+             (write-char (code-char (parse-integer string :radix 16 :start (1+ index))) s)
+             (setf index (position #\Space string :start (1+ index))))
+            ((eql #\\ char)
+             (write-char next-char s)
+             (incf index))
+            (t
+             (write-char char s)))
+          (when (= index (1- (length string)))
+            (return-from css-unescape (get-output-stream-string s)))))
       string))
 
 (defun read-name ()
