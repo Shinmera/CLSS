@@ -31,6 +31,90 @@
 (define-matcher attr-comparator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
 (defvar *valid-combinators* " >+~")
 
+;; https://drafts.csswg.org/cssom/#serialize-an-identifier
+(defun css-escape (string)
+  "Escape all the invalid CSS characters to their safe counterparts."
+  (declare (optimize speed)
+           (type string string))
+  (let ((buffer (make-array 0 :adjustable t :fill-pointer 0)))
+    (labels ((escapable (char)
+               (let ((code (char-code char)))
+                 (or (<= code #x1f)
+                     (= code #x7f)
+                     (not (or (>= code #x80)
+                              (char= char #\-)
+                              (char= char #\_)
+                              (digit-char-p char)
+                              (char<= #\A char #\Z)
+                              (char<= #\a char #\z))))))
+             (extend-with-string (string)
+               (loop for char across string
+                     do (vector-push-extend char buffer)))
+             (extend-with-escaped (char)
+               (extend-with-string (format nil "\\~X " (char-code char))))
+             (escape-regular-string (string)
+               (loop for char across string
+                     if (char= #\Nul char)
+                       do (extend-with-string "\\fffd ")
+                     else if (or (<= #x1 (char-code char) #x1f)
+                                 (= (char-code char) #x7f))
+                            do (extend-with-escaped char)
+                     else if (escapable char)
+                            do (vector-push-extend #\\ buffer)
+                            and do (vector-push-extend char buffer)
+                     else
+                       do (vector-push-extend char buffer))))
+      (when (and (= (length string) 1)
+                 (char= #\- (elt string 0)))
+        (extend-with-escaped (elt string 0)))
+      ;; Process first char.
+      (when (>= (length string) 1)
+        (cond
+          ((digit-char-p (elt string 0))
+           (extend-with-escaped (elt string 0)))
+          (t
+           (escape-regular-string (subseq string 0 1)))))
+      ;; Second char.
+      (when (>= (length string) 2)
+        (cond
+          ((and (char= #\- (elt string 0))
+                (digit-char-p (elt string 1)))
+           (extend-with-escaped (elt string 1)))
+          (t
+           (escape-regular-string (subseq string 1 2)))))
+      ;; All the rest.
+      (when (> (length string) 2)
+        (escape-regular-string (subseq string 2)))
+      (coerce buffer 'string))))
+
+(defun css-unescape (string)
+  "Get the original contents of the escaped STRING."
+  (declare (optimize speed)
+           (type string string))
+  (if (search "\\" string)
+      (loop with buffer = (make-array 0 :adjustable t :fill-pointer 0)
+            for index below (length string)
+            for char = (elt string index)
+            until (= index (length string))
+            if (search "\\fffd " string
+                       :start2 index :end2 (min (length string)
+                                                (+ index 6)))
+              do (vector-push-extend #\Nul buffer)
+              and do (setf index (position #\Space string :start (1+ index)))
+            else if (and (eql #\\ char)
+                         (digit-char-p (elt string (1+ index)) 16))
+                   do (vector-push-extend
+                       (code-char (parse-integer string :radix 16 :start (1+ index)))
+                       buffer)
+                   and do (setf index (position #\Space string :start (1+ index)))
+            else if (eql #\\ char)
+                   do (vector-push-extend (elt string (1+ index)) buffer)
+                   and do (incf index)
+            else
+              do (vector-push-extend char buffer)
+            finally (return (coerce buffer 'string)))
+      string))
+
 (defun read-name ()
   "Reads a CSS selector name-like string."
   (unless (funcall (make-matcher :clss-name))
@@ -63,11 +147,11 @@
 
 (defun read-id-constraint ()
   "Reads an ID attribute constraint and returns it."
-  (make-id-constraint (read-name)))
+  (make-id-constraint (css-unescape (read-name))))
 
 (defun read-class-constraint ()
   "Reads a class constraint and returns it."
-  (make-class-constraint (read-name)))
+  (make-class-constraint (css-unescape (read-name))))
 
 (defun read-attribute-comparator ()
   "Reads an attribute comparator string and returns it if found."
@@ -88,9 +172,9 @@
 
 (defun read-attribute-constraint ()
   "Reads a complete attribute constraint and returns it."
-  (let ((name (read-name))
+  (let ((name (css-unescape (read-name)))
         (oper (read-attribute-comparator))
-        (val (read-attribute-value)))
+        (val (css-unescape (read-attribute-value))))
     (prog1
         (make-attribute-constraint name val oper)
       (consume))))
