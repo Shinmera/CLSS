@@ -22,8 +22,7 @@
 
 ;; https://www.w3.org/TR/CSS21/syndata.html#value-def-identifier
 (define-matcher clss-name (or (in #\/ #\9) (in #\? #\Z) (in #\a #\z) (any #\- #\\ #\_ #\! #.(code-char #xB7))
-                              ;; Any better way to allow all the values higher than some threshold?
-                              (in #.(code-char #xA0) #.(code-char (1- char-code-limit)))
+                              (not (in #.(code-char #x0) #.(code-char #xA0)))
                               (and (in #.(code-char #x1F) #.(code-char #xFF))
                                    (prev (is #\\)))))
 (define-matcher clss-tag-name (or :clss-name (and (is #\:) (next (is #\:))) (and (is #\:) (prev (is #\:)))))
