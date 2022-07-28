@@ -99,30 +99,28 @@
            (type string string))
   (if (search "\\" string)
       (with-output-to-string (s)
-        (do* ((index 0 (1+ index))
-              (char (elt string index) (elt string index))
-              (next-char (when (< index (1- (length string)))
-                           (elt string (1+ index)))
-                         (when (< index (1- (length string)))
-                           (elt string (1+ index)))))
-             (nil)
-          (cond
-            ((search "\\fffd " string
-                     :start2 index :end2 (min (length string)
-                                              (+ index 6)))
-             (write-char #\Nul s)
-             (setf index (position #\Space string :start (1+ index))))
-            ((and (eql #\\ char)
-                  (digit-char-p next-char 16))
-             (write-char (code-char (parse-integer string :radix 16 :start (1+ index))) s)
-             (setf index (position #\Space string :start (1+ index))))
-            ((eql #\\ char)
-             (write-char next-char s)
-             (incf index))
-            (t
-             (write-char char s)))
-          (when (>= index (1- (length string)))
-            (return-from css-unescape (get-output-stream-string s)))))
+        (loop with len = (length string)
+              for index below len
+              for char = (elt string index)
+              for next-char = (when (< index (1- len))
+                                (elt string (1+ index)))
+              do (cond
+                   ((search "\\fffd " string
+                            :start2 index :end2 (min len (+ index 6)))
+                    (write-char #\Nul s)
+                    (setf index (position #\Space string :start (1+ index))))
+                   ((and (eql #\\ char)
+                         next-char
+                         (digit-char-p next-char 16))
+                    (write-char
+                     (code-char (parse-integer string :radix 16 :start (1+ index))) s)
+                    (setf index (position #\Space string :start (1+ index))))
+                   ((and (eql #\\ char)
+                         next-char)
+                    (write-char next-char s)
+                    (incf index))
+                   (t
+                    (write-char char s)))))
       string))
 
 (defun read-name ()
