@@ -31,23 +31,25 @@
 (define-matcher attr-comparator (or (is #\=) (and (any #\~ #\^ #\$ #\* #\|) (next (is #\=)))))
 (defvar *valid-combinators* " >+~")
 
+(defun escapable (char)
+  "A helper function to decide whether a part of identifier needs escaping."
+  (let ((code (char-code char)))
+    (or (<= code #x1f)
+        (= code #x7f)
+        (not (or (>= code #x80)
+                 (char= char #\-)
+                 (char= char #\_)
+                 (digit-char-p char)
+                 (char<= #\A char #\Z)
+                 (char<= #\a char #\z))))))
+
 ;; https://drafts.csswg.org/cssom/#serialize-an-identifier
 (defun css-escape (string)
   "Escape all the invalid CSS characters to their safe counterparts."
   (declare (optimize speed)
            (type string string))
   (let ((buffer (make-array 0 :adjustable t :fill-pointer 0)))
-    (labels ((escapable (char)
-               (let ((code (char-code char)))
-                 (or (<= code #x1f)
-                     (= code #x7f)
-                     (not (or (>= code #x80)
-                              (char= char #\-)
-                              (char= char #\_)
-                              (digit-char-p char)
-                              (char<= #\A char #\Z)
-                              (char<= #\a char #\z))))))
-             (extend-with-string (string)
+    (labels ((extend-with-string (string)
                (loop for char across string
                      do (vector-push-extend char buffer)))
              (extend-with-escaped (char)
