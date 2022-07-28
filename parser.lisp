@@ -101,7 +101,10 @@
       (with-output-to-string (s)
         (do* ((index 0 (1+ index))
               (char (elt string index) (elt string index))
-              (next-char (elt string (1+ index)) (elt string (1+ index))))
+              (next-char (when (< index (1- (length string)))
+                           (elt string (1+ index)))
+                         (when (< index (1- (length string)))
+                           (elt string (1+ index)))))
              (nil)
           (cond
             ((search "\\fffd " string
@@ -118,7 +121,7 @@
              (incf index))
             (t
              (write-char char s)))
-          (when (= index (1- (length string)))
+          (when (>= index (1- (length string)))
             (return-from css-unescape (get-output-stream-string s)))))
       string))
 
