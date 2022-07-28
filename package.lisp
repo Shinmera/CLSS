@@ -23,6 +23,9 @@
    
    #:selector-malformed
    #:selector
+
+   #:css-escape
+   #:css-unescape
    
    #:match-constraint
    #:match-matcher

@@ -118,7 +118,8 @@ Returns NIL if it fails to do so, unspecified otherwise."
      (and (element-p node)
           (destructuring-bind (comparator attribute value) (cdr constraint)
             (declare (type simple-string comparator attribute value))
-            (let ((attr (attribute node attribute)))
+            (let ((attr (attribute node attribute))
+                  (value value))
               (declare (type (or null string) attr))
               (when attr
                 (ecase (aref comparator 0)
