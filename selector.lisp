@@ -1,9 +1,3 @@
-#|
- This file is a part of CLSS
- (c) 2014 Shirakumo http://tymoon.eu (shinmera@tymoon.eu)
- Author: Nicolas Hafner <shinmera@tymoon.eu>
-|#
-
 (in-package #:org.shirakumo.clss)
 
 (defun make-selector (&rest groups)
