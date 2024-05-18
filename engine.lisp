@@ -89,56 +89,57 @@ for the selector to the matcher."))
   "Attempts to match the CONSTRAINT form against the node.
 Returns NIL if it fails to do so, unspecified otherwise."
   (declare (optimize speed))
-  (ecase (car constraint)
-    (:c-any
-     (and (not (text-node-p node))
-          (not (comment-p node))))
-    (:c-tag
-     (and (element-p node)
-          (string-equal (tag-name node) (second constraint))))
-    (:c-type
-     (typep node (second constraint)))
-    (:c-id
-     (and (element-p node)
-          (string-equal (attribute node "id") (second constraint))))
-    (:c-class
-     (and (element-p node)
-          (find-substring (second constraint) (or (attribute node "class") "") #\Space)))
-    (:c-attr-exists
-     (and (element-p node)
+  (when (ecase (car constraint)
+          (:c-any
+           (and (not (text-node-p node))
+                (not (comment-p node))))
+          (:c-tag
+           (and (element-p node)
+                (string-equal (tag-name node) (second constraint))))
+          (:c-type
+           (typep node (second constraint)))
+          (:c-id
+           (and (element-p node)
+                (string-equal (attribute node "id") (second constraint))))
+          (:c-class
+           (and (element-p node)
+                (find-substring (second constraint) (or (attribute node "class") "") #\Space)))
+          (:c-attr-exists
+           (and (element-p node)
 
 
-          (not (null (attribute node (second constraint))))))
-    (:c-attr-equals
-     (and (element-p node)
-          (destructuring-bind (comparator attribute value) (cdr constraint)
-            (declare (type simple-string comparator attribute value))
-            (let ((attr (attribute node attribute))
-                  (value value))
-              (declare (type (or null string) attr))
-              (when attr
-                (ecase (aref comparator 0)
-                  (#\=
-                   (string-equal attr value))
-                  (#\~
-                   (find-substring value attr #\Space))
-                  (#\^
-                   (and (<= (length value) (length attr))
-                        (string= value attr :end2 (length value))))
-                  (#\$
-                   (and (<= (length value) (length attr))
-                        (string= value attr :start2 (- (length attr) (length value)))))
-                  (#\*
-                   (not (null (search value attr))))
-                  (#\|
-                   (find-substring value attr #\-))))))))
-    (:c-pseudo
-     (and (element-p node)
-          (destructuring-bind (name &rest args) (cdr constraint)
-            (let ((pseudo (pseudo-selector name)))
-              (declare (type function pseudo))
-              (assert (not (null pseudo)) () 'undefined-pseudo-selector :name name)
-              (not (null (apply pseudo node args)))))))))
+                (not (null (attribute node (second constraint))))))
+          (:c-attr-equals
+           (and (element-p node)
+                (destructuring-bind (comparator attribute value) (cdr constraint)
+                  (declare (type simple-string comparator attribute value))
+                  (let ((attr (attribute node attribute))
+                        (value value))
+                    (declare (type (or null string) attr))
+                    (when attr
+                      (ecase (aref comparator 0)
+                        (#\=
+                         (string-equal attr value))
+                        (#\~
+                         (find-substring value attr #\Space))
+                        (#\^
+                         (and (<= (length value) (length attr))
+                              (string= value attr :end2 (length value))))
+                        (#\$
+                         (and (<= (length value) (length attr))
+                              (string= value attr :start2 (- (length attr) (length value)))))
+                        (#\*
+                         (not (null (search value attr))))
+                        (#\|
+                         (find-substring value attr #\-))))))))
+          (:c-pseudo
+           (and (element-p node)
+                (destructuring-bind (name &rest args) (cdr constraint)
+                  (let ((pseudo (pseudo-selector name)))
+                    (declare (type function pseudo))
+                    (assert (not (null pseudo)) () 'undefined-pseudo-selector :name name)
+                    (not (null (apply pseudo node args))))))))
+    (values t)))
 
 (declaim (ftype (function (list plump:node)
                           (values boolean))
