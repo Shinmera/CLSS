@@ -83,7 +83,7 @@ for the selector to the matcher."))
                   finally (test) (return NIL))))))))
 
 (declaim (ftype (function (list plump-dom:node)
-                          (values boolean))
+                          (values (or boolean string)))
                 match-constraint))
 (defun match-constraint (constraint node)
   "Attempts to match the CONSTRAINT form against the node.
