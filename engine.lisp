@@ -106,8 +106,6 @@ Returns NIL if it fails to do so, unspecified otherwise."
                 (find-substring (second constraint) (or (attribute node "class") "") #\Space)))
           (:c-attr-exists
            (and (element-p node)
-
-
                 (not (null (attribute node (second constraint))))))
           (:c-attr-equals
            (and (element-p node)
@@ -119,9 +117,9 @@ Returns NIL if it fails to do so, unspecified otherwise."
                     (when attr
                       (ecase (aref comparator 0)
                         (#\=
-                         (string-equal attr value))
+                         (not (null (string-equal attr value))))
                         (#\~
-                         (find-substring value attr #\Space))
+                         (not (null (find-substring value attr #\Space))))
                         (#\^
                          (and (<= (length value) (length attr))
                               (string= value attr :end2 (length value))))
@@ -131,7 +129,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
                         (#\*
                          (not (null (search value attr))))
                         (#\|
-                         (find-substring value attr #\-))))))))
+                         (not (null (find-substring value attr #\-))))))))))
           (:c-pseudo
            (and (element-p node)
                 (destructuring-bind (name &rest args) (cdr constraint)
