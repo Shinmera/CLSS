@@ -103,7 +103,7 @@ Returns NIL if it fails to do so, unspecified otherwise."
                 (string-equal (attribute node "id") (second constraint))))
           (:c-class
            (and (element-p node)
-                (find-substring (second constraint) (or (attribute node "class") "") #\Space)))
+                (not (null (find-substring (second constraint) (or (attribute node "class") "") #\Space)))))
           (:c-attr-exists
            (and (element-p node)
                 (not (null (attribute node (second constraint))))))
